@@ -219,7 +219,7 @@ export default function EcommerceSite() {
       <header className="fixed top-0 w-full z-[100] bg-[#131921] text-white">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
           <div className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-            <div style={{ backgroundColor: BRAND_YELLOW }} className="w-8 h-8 rounded-full flex items-center justify-center"><span className="text-black font-black text-xl italic">C</span></div>
+            <img src="/logo.svg" alt="Cover Capital Logo" className="w-11 h-11 object-contain" />
             <h1 className="text-xl font-black tracking-tight italic hidden sm:block">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
           </div>
           <div className="flex-1 flex h-10 overflow-hidden rounded-md group">
