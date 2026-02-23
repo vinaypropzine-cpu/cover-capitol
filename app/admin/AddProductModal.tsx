@@ -7,9 +7,9 @@ import { OurFileRouter } from "../api/uploadthing/core";
 
 export default function AddProductModal() {
     const [isOpen, setIsOpen] = useState(false);
-    // Inside AddProductModal function
     const [isUploading, setIsUploading] = useState(false);
 
+    // Initial state with new fields
     const [formData, setFormData] = useState({
         id: "",
         name: "",
@@ -17,14 +17,41 @@ export default function AddProductModal() {
         brand: "",
         model: "",
         category: "",
-        type: "",
+        deviceType: "",      // Mobile, Tablet, Smartwatch
+        subCategory: "",     // Normal, UV, Membrane
         tag: "",
-        price: "",
+        price: "",           // Base price for grid display
         images: [] as string[]
     });
 
+    // New state to manage selected finishes and their specific prices
+    const [selectedTypes, setSelectedTypes] = useState<{ [key: string]: string | undefined }>({
+        Clear: "",
+        Matte: "",
+        Privacy: ""
+    });
+
+    const handleTypeToggle = (type: string) => {
+        setSelectedTypes(prev => ({
+            ...prev,
+            [type]: prev[type] === undefined ? "" : undefined // Toggles presence
+        }));
+    };
+
+    const handlePriceChange = (type: string, value: string) => {
+        setSelectedTypes(prev => ({ ...prev, [type]: value }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Convert the selectedTypes object into the array of objects the DB expects
+        const typesArray = Object.entries(selectedTypes)
+            .filter(([_, price]) => price !== undefined)
+            .map(([name, price]) => ({
+                name,
+                price: Number(price)
+            }));
 
         const productPayload = {
             id: Number(formData.id),
@@ -33,9 +60,11 @@ export default function AddProductModal() {
             brand: formData.brand,
             model: formData.model,
             category: formData.category,
-            type: formData.category === "Tempered Glass" ? formData.type : "",
+            deviceType: formData.deviceType,
+            subCategory: formData.subCategory,
+            types: typesArray, 
             tag: formData.tag,
-            price: Number(formData.price),
+            price: Number(formData.price), // Main display price
             images: formData.images,
         };
 
@@ -44,17 +73,10 @@ export default function AddProductModal() {
         if (result.success) {
             setIsOpen(false);
             setFormData({
-                id: "",
-                name: "",
-                description: "",
-                brand: "",
-                model: "",
-                category: "",
-                type: "",
-                tag: "",
-                price: "",
-                images: []
+                id: "", name: "", description: "", brand: "", model: "",
+                category: "", deviceType: "", subCategory: "", tag: "", price: "", images: []
             });
+            setSelectedTypes({ Clear: "", Matte: "", Privacy: "" });
             window.location.reload();
         } else {
             alert("Error adding product!");
@@ -62,104 +84,86 @@ export default function AddProductModal() {
     };
 
     if (!isOpen) return (
-        <button
-            onClick={() => setIsOpen(true)}
-            className="bg-black text-white px-6 py-2 rounded font-bold uppercase text-sm"
-        >
-            + Add New Product
-        </button>
+        <button onClick={() => setIsOpen(true)} className="bg-black text-white px-6 py-2 rounded font-bold uppercase text-sm">+ Add New Product</button>
     );
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white border-4 border-black p-6 w-full max-w-2xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-white border-4 border-black p-6 w-full max-w-2xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto">
                 <h2 className="text-2xl font-black uppercase mb-6 border-b-4 border-black pb-2">New Product Entry</h2>
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-
                     <div className="col-span-2"><p className="font-black uppercase text-xs mb-2">Product Info</p></div>
 
-                    <input
-                        placeholder="Product Name"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        required
-                    />
+                    <input placeholder="Product Name" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                    <input placeholder="Product ID" type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, id: e.target.value })} required />
+                    
+                    <textarea placeholder="Product Description" className="col-span-2 border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, description: e.target.value })} required />
 
-                    <input
-                        placeholder="Product ID"
-                        type="number"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, id: e.target.value })}
-                        required
-                    />
+                    <div className="col-span-2 mt-4"><p className="font-black uppercase text-xs mb-2">Categorization</p></div>
 
-                    <textarea
-                        placeholder="Product Description"
-                        className="col-span-2 border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                        required
-                    />
-
-                    <div className="col-span-2 mt-4"><p className="font-black uppercase text-xs mb-2">Technical Specification</p></div>
-
-                    <input
-                        placeholder="Brand"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                        required
-                    />
-
-                    <input
-                        placeholder="Model Name"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, model: e.target.value })}
-                        required
-                    />
-
-                    {/* CATEGORY DROPDOWN */}
-                    <select
-                        className="border-2 border-black p-2 font-bold outline-none"
-                        onChange={e => setFormData({ ...formData, category: e.target.value })}
-                        required
-                    >
+                    <select className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, category: e.target.value })} required>
                         <option value="">Select Category</option>
                         <option value="Tempered Glass">Tempered Glass</option>
                         <option value="Camera Guard">Camera Guard</option>
-                        <option value="back screen guard">Back Screen Guard</option>
-                        <option value="combo">Combo</option>
+                        <option value="Back Screen Guard">Back Screen Guard</option>
                     </select>
 
-                    {/* CONDITIONAL TYPE */}
+                    {/* DYNAMIC TEMPERED GLASS WORKFLOW */}
                     {formData.category === "Tempered Glass" && (
-                        <select
-                            className="border-2 border-black p-2 font-bold outline-none"
-                            onChange={e => setFormData({ ...formData, type: e.target.value })}
-                            required
-                        >
-                            <option value="">Select Type</option>
-                            <option value="clear">Clear</option>
-                            <option value="matte">Matte</option>
-                            <option value="privacy">Privacy</option>
-                        </select>
+                        <>
+                            <select className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, deviceType: e.target.value })} required>
+                                <option value="">Device Type</option>
+                                <option value="Mobile">Mobile</option>
+                                <option value="Tablet">Tablet</option>
+                                <option value="Smartwatch">Smartwatch</option>
+                            </select>
+
+                            <select className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, subCategory: e.target.value })} required>
+                                <option value="">Sub Category</option>
+                                <option value="Normal">Normal</option>
+                                <option value="UV">UV</option>
+                                <option value="Edge to Edge Membrane">Edge to Edge Membrane</option>
+                            </select>
+
+                            <div className="col-span-2 bg-zinc-100 p-4 border-2 border-black mt-2">
+                                <p className="font-black uppercase text-[10px] mb-4">Select Finishes & Set Prices</p>
+                                <div className="space-y-3">
+                                    {["Clear", "Matte", "Privacy"].map((type) => (
+                                        <div key={type} className="flex items-center gap-4">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedTypes[type] !== undefined} 
+                                                onChange={() => handleTypeToggle(type)}
+                                                className="w-5 h-5 accent-black"
+                                            />
+                                            <span className="font-bold text-sm w-20">{type}</span>
+                                            {selectedTypes[type] !== undefined && (
+                                                <input 
+                                                    type="number" 
+                                                    placeholder={`Price for ${type}`}
+                                                    className="flex-1 border-2 border-black p-1 text-sm font-bold outline-none"
+                                                    value={selectedTypes[type]}
+                                                    onChange={(e) => handlePriceChange(type, e.target.value)}
+                                                    required
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
                     )}
 
-                    <select
-                        className="border-2 border-black p-2 font-bold outline-none"
-                        onChange={e => setFormData({ ...formData, tag: e.target.value })}
-                    >
+                    <div className="col-span-2 mt-4"><p className="font-black uppercase text-xs mb-2">Pricing & Tags</p></div>
+
+                    <input placeholder="Main Display Price" type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, price: e.target.value })} required />
+                    
+                    <select className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, tag: e.target.value })}>
                         <option value="">Select Tag</option>
                         <option value="best seller">Best Seller</option>
                         <option value="top rated">Top Rated</option>
                     </select>
-
-                    <input
-                        placeholder="Price (INR)"
-                        type="number"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, price: e.target.value })}
-                        required
-                    />
 
                     {/* IMAGE UPLOAD */}
                     {/* IMAGE UPLOAD SECTION */}

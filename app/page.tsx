@@ -519,7 +519,7 @@ export default function EcommerceSite() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
                   {liveProducts
-                    .filter(p => p.tag === 'Top Rated')
+                    .filter(p => p.tag === 'top rated')
                     .slice(0, 4) // Limits to the 4 most recent top-rated items
                     .map((prod) => (
                       <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-xl transition-all flex flex-col group text-black shadow-sm">

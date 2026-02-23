@@ -1,19 +1,41 @@
 import mongoose, { Schema, model, models } from 'mongoose';
 
-// 1. Define the schema strictly with the 'id' field
 const ProductSchema = new Schema({
-  id: { type: Number, required: true }, // 👈 Explicitly required
+  id: { type: Number, required: true },
   name: { type: String, required: true },
-  price: { type: Number, required: true },
+  
+  // This remains the 'base' or 'starting' price for the product grid
+  price: { type: Number, required: true }, 
+  
   images: [String],
   category: String,
   brand: String,
   tag: String,
   model: String,
   description: String,
+
+  // --- NEW WORKFLOW FIELDS ---
+  
+  // Stores: "Mobile", "Tablet", or "Smartwatch"
+  deviceType: { type: String }, 
+  
+  // Stores: "Normal", "UV", or "Edge to Edge Membrane"
+  subCategory: { type: String }, 
+
+  // UPDATED: Now stores an array of objects containing the finish name AND its specific price
+  // This allows Matte to be ₹649 while Privacy is ₹899
+  types: [{
+    name: { type: String },
+    price: { type: Number }
+  }],
+
+  // --- END NEW FIELDS ---
+
+  details: { type: Map, of: String },
+  packageContents: [String]
 }, { timestamps: true });
 
-// 2. THE FIX: Force delete the old model if it exists to refresh the schema in Atlas
+// Ensures Next.js reloads the schema immediately upon saving
 if (models.Product) {
   delete models.Product;
 }
