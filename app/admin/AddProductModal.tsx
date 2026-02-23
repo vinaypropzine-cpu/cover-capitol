@@ -7,47 +7,61 @@ import { OurFileRouter } from "../api/uploadthing/core";
 
 export default function AddProductModal() {
     const [isOpen, setIsOpen] = useState(false);
+
     const [formData, setFormData] = useState({
         id: "",
         name: "",
+        description: "",
         brand: "",
+        model: "",
         category: "",
+        type: "",
         tag: "",
         price: "",
-        image: ""
+        images: [] as string[]
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Explicitly mapping the payload to ensure keys match your Atlas Documents
         const productPayload = {
-            id: Number(formData.id), // Forces numeric ID for consistency
+            id: Number(formData.id),
             name: formData.name,
+            description: formData.description,
             brand: formData.brand,
+            model: formData.model,
             category: formData.category,
+            type: formData.category === "Tempered Glass" ? formData.type : "",
             tag: formData.tag,
             price: Number(formData.price),
-            images: [formData.image], // Wraps single URL in an array
+            images: formData.images,
         };
 
         const result = await addProduct(productPayload);
 
         if (result.success) {
             setIsOpen(false);
-            setFormData({ id: "", name: "", brand: "", category: "", tag: "", price: "", image: "" });
-            // Reload ensures the page fetches the newly created record with its proper ID
+            setFormData({
+                id: "",
+                name: "",
+                description: "",
+                brand: "",
+                model: "",
+                category: "",
+                type: "",
+                tag: "",
+                price: "",
+                images: []
+            });
             window.location.reload();
         } else {
-            alert("Error adding product! Please check the console.");
+            alert("Error adding product!");
         }
     };
 
-    // Inside app/admin/AddProductModal.tsx
     if (!isOpen) return (
         <button
             onClick={() => setIsOpen(true)}
-            /* Remove complex hover/transition effects here to stop the mismatch */
             className="bg-black text-white px-6 py-2 rounded font-bold uppercase text-sm"
         >
             + Add New Product
@@ -60,47 +74,83 @@ export default function AddProductModal() {
                 <h2 className="text-2xl font-black uppercase mb-6 border-b-4 border-black pb-2">New Product Entry</h2>
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                    {/* Product Info Section */}
+
                     <div className="col-span-2"><p className="font-black uppercase text-xs mb-2">Product Info</p></div>
+
                     <input
                         placeholder="Product Name"
                         className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                         required
                     />
+
                     <input
-                        placeholder="Product ID (e.g. 405)"
+                        placeholder="Product ID"
                         type="number"
                         className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
                         onChange={e => setFormData({ ...formData, id: e.target.value })}
                         required
                     />
-                    <input
-                        placeholder="Image URL"
+
+                    <textarea
+                        placeholder="Product Description"
                         className="col-span-2 border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, image: e.target.value })}
+                        onChange={e => setFormData({ ...formData, description: e.target.value })}
                         required
                     />
 
-                    {/* Tech Specs Section */}
                     <div className="col-span-2 mt-4"><p className="font-black uppercase text-xs mb-2">Technical Specification</p></div>
+
                     <input
                         placeholder="Brand"
                         className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
                         onChange={e => setFormData({ ...formData, brand: e.target.value })}
                         required
                     />
+
                     <input
-                        placeholder="Category"
+                        placeholder="Model Name"
                         className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
-                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                        onChange={e => setFormData({ ...formData, model: e.target.value })}
                         required
                     />
-                    <input
-                        placeholder="Type (Tag)"
-                        className="border-2 border-black p-2 font-bold focus:bg-zinc-50 outline-none"
+
+                    {/* CATEGORY DROPDOWN */}
+                    <select
+                        className="border-2 border-black p-2 font-bold outline-none"
+                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                        required
+                    >
+                        <option value="">Select Category</option>
+                        <option value="Tempered Glass">Tempered Glass</option>
+                        <option value="Camera Guard">Camera Guard</option>
+                        <option value="back screen guard">Back Screen Guard</option>
+                        <option value="combo">Combo</option>
+                    </select>
+
+                    {/* CONDITIONAL TYPE */}
+                    {formData.category === "Tempered Glass" && (
+                        <select
+                            className="border-2 border-black p-2 font-bold outline-none"
+                            onChange={e => setFormData({ ...formData, type: e.target.value })}
+                            required
+                        >
+                            <option value="">Select Type</option>
+                            <option value="clear">Clear</option>
+                            <option value="matte">Matte</option>
+                            <option value="privacy">Privacy</option>
+                        </select>
+                    )}
+
+                    <select
+                        className="border-2 border-black p-2 font-bold outline-none"
                         onChange={e => setFormData({ ...formData, tag: e.target.value })}
-                    />
+                    >
+                        <option value="">Select Tag</option>
+                        <option value="best seller">Best Seller</option>
+                        <option value="top rated">Top Rated</option>
+                    </select>
+
                     <input
                         placeholder="Price (INR)"
                         type="number"
@@ -109,48 +159,50 @@ export default function AddProductModal() {
                         required
                     />
 
-                    <div className="col-span-2 flex gap-4 mt-6">
-                        <button
-                            type="submit"
-                            className="flex-1 bg-black text-white font-black py-3 uppercase hover:bg-zinc-800 transition-all"
-                        >
-                            Save to Vault
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsOpen(false)}
-                            className="flex-1 border-2 border-black font-black py-3 uppercase hover:bg-zinc-100 transition-all"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-
-                    {/* Inside AddProductModal.tsx form */}
+                    {/* IMAGE UPLOAD */}
                     <div className="col-span-2 border-2 border-dashed border-black p-4 flex flex-col items-center justify-center bg-zinc-50">
-                        <p className="font-black uppercase text-[10px] mb-2">Product Image Upload</p>
+                        <p className="font-black uppercase text-[10px] mb-2">Product Image Upload (Max 4)</p>
 
-                        {formData.image ? (
-                            <div className="relative w-20 h-20 border-2 border-black">
-                                <img src={formData.image} alt="Preview" className="w-full h-full object-contain" />
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, image: "" })}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px] font-black"
-                                >X</button>
-                            </div>
-                        ) : (
+                        <div className="flex gap-2 flex-wrap">
+                            {formData.images.map((img, i) => (
+                                <div key={i} className="relative w-20 h-20 border-2 border-black">
+                                    <img src={img} className="w-full h-full object-contain" />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setFormData({
+                                                ...formData,
+                                                images: formData.images.filter((_, idx) => idx !== i)
+                                            })
+                                        }
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px] font-black"
+                                    >X</button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {formData.images.length < 4 && (
                             <UploadButton<OurFileRouter, any>
                                 endpoint="productImage"
                                 onClientUploadComplete={(res) => {
-                                    setFormData({ ...formData, image: res[0].url });
-                                    alert("Upload Completed");
-                                }}
-                                onUploadError={(error: Error) => {
-                                    alert(`ERROR! ${error.message}`);
+                                    setFormData({
+                                        ...formData,
+                                        images: [...formData.images, res[0].url]
+                                    });
                                 }}
                             />
                         )}
                     </div>
+
+                    <div className="col-span-2 flex gap-4 mt-6">
+                        <button type="submit" className="flex-1 bg-black text-white font-black py-3 uppercase">
+                            Save to Vault
+                        </button>
+                        <button type="button" onClick={() => setIsOpen(false)} className="flex-1 border-2 border-black font-black py-3 uppercase">
+                            Cancel
+                        </button>
+                    </div>
+
                 </form>
             </div>
         </div>

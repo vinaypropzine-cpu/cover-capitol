@@ -456,44 +456,106 @@ export default function EcommerceSite() {
                   exit={{ opacity: 0, x: -20 }}
                   className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6"
                 >
-                  {liveProducts.filter(p => p.category === categoryMap[activeSubCategory]).map((prod) => (
-                    <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-lg transition-all flex flex-col group text-black">
+                  {liveProducts
+                    .filter(p => p.category === categoryMap[activeSubCategory])
+                    .slice(0, 4) // This limits the display to exactly 4 items
+                    .map((prod) => (
+                      <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-lg transition-all flex flex-col group text-black">
 
-                      {/* --- WRAPPER LINK START --- */}
-                      <Link href={`/product/${prod.id}`} className="cursor-pointer">
-                        <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
-                          <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-                            {prod.tag}
-                          </span>
-                          <img
-                            src={prod.images?.[0]}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                            alt={prod.name}
-                          />
-                          {/* Note: The 'Add to Bag' button overlay is still visible on hover but we keep it separate from the link below */}
+                        {/* --- WRAPPER LINK START --- */}
+                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
+                          <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
+                            <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                              {prod.tag}
+                            </span>
+                            <img
+                              src={prod.images?.[0]}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                              alt={prod.name}
+                            />
+                            {/* Note: The 'Add to Bag' button overlay is still visible on hover but we keep it separate from the link below */}
+                          </div>
+                          <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
+                            {prod.name}
+                          </h5>
+                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
+                        </Link>
+                        {/* --- WRAPPER LINK END --- */}
+
+                        {/* Keeping the 'Add to Bag' button separate so it doesn't trigger navigation */}
+                        <div className="relative">
+                          <button
+                            onClick={() => { addToCart(prod); toggleCart(); }}
+                            style={{ backgroundColor: BRAND_YELLOW }}
+                            className="w-full py-3 rounded-xl text-[11px] font-black uppercase text-black shadow-xl active:scale-95 transition-all"
+                          >
+                            Add to Bag
+                          </button>
                         </div>
-                        <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
-                          {prod.name}
-                        </h5>
-                        <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                      </Link>
-                      {/* --- WRAPPER LINK END --- */}
 
-                      {/* Keeping the 'Add to Bag' button separate so it doesn't trigger navigation */}
-                      <div className="relative">
+                      </div>
+                    ))}
+                </motion.div>
+              </AnimatePresence>
+              <div className="mt-12 flex justify-center">
+                <button className="px-10 py-3 border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+                  View All {categoryMap[activeSubCategory]}
+                </button>
+              </div>
+            </section>
+
+            {/* --- TOP RATED SECTION: RECENT 4 ITEMS --- */}
+            <section className="py-20 bg-gray-50">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="flex items-center justify-between mb-12">
+                  <div>
+                    <h2 className="text-3xl font-black uppercase italic text-black">Top Rated Protection</h2>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-2">Community Favorites • 4.9/5 Avg. Rating</p>
+                  </div>
+                  <button className="hidden md:block text-xs font-black uppercase border-b-2 border-black pb-1 hover:text-orange-600 hover:border-orange-600 transition-all">
+                    Explore All
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+                  {liveProducts
+                    .filter(p => p.tag === 'Top Rated')
+                    .slice(0, 4) // Limits to the 4 most recent top-rated items
+                    .map((prod) => (
+                      <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-xl transition-all flex flex-col group text-black shadow-sm">
+
+                        {/* Link to Individual Product Page */}
+                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
+                          <div className="relative aspect-[4/5] bg-gray-100 rounded-xl mb-4 overflow-hidden">
+                            <div className="absolute top-2 left-2 z-10 flex gap-2">
+                              <span className="bg-[#fbea27] text-black px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/10">
+                                ⭐ {prod.tag}
+                              </span>
+                            </div>
+                            <img
+                              src={prod.images?.[0]}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                              alt={prod.name}
+                            />
+                          </div>
+                          <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
+                            {prod.name}
+                          </h5>
+                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
+                        </Link>
+
+                        {/* Quick Add Button */}
                         <button
                           onClick={() => { addToCart(prod); toggleCart(); }}
                           style={{ backgroundColor: BRAND_YELLOW }}
-                          className="w-full py-3 rounded-xl text-[11px] font-black uppercase text-black shadow-xl active:scale-95 transition-all"
+                          className="w-full py-3 rounded-xl text-[11px] font-black uppercase text-black shadow-lg active:scale-95 transition-all border border-black/5"
                         >
                           Add to Bag
                         </button>
                       </div>
-
-                    </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
+                    ))}
+                </div>
+              </div>
             </section>
 
           </>
