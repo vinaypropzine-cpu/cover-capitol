@@ -7,6 +7,8 @@ import { OurFileRouter } from "../api/uploadthing/core";
 
 export default function AddProductModal() {
     const [isOpen, setIsOpen] = useState(false);
+    // Inside AddProductModal function
+    const [isUploading, setIsUploading] = useState(false);
 
     const [formData, setFormData] = useState({
         id: "",
@@ -160,13 +162,43 @@ export default function AddProductModal() {
                     />
 
                     {/* IMAGE UPLOAD */}
-                    <div className="col-span-2 border-2 border-dashed border-black p-4 flex flex-col items-center justify-center bg-zinc-50">
-                        <p className="font-black uppercase text-[10px] mb-2">Product Image Upload (Max 4)</p>
+                    {/* IMAGE UPLOAD SECTION */}
+                    <div className="col-span-2 border-4 border-black p-4 bg-zinc-50 relative">
+                        <div className="flex justify-between items-center mb-4">
+                            <p className="font-black uppercase text-xs tracking-tighter">Inventory Visuals ({formData.images.length}/4)</p>
 
-                        <div className="flex gap-2 flex-wrap">
+                            {/* CUSTOM UPLOAD TRIGGER */}
+                            {formData.images.length < 4 && !isUploading && (
+                                <UploadButton<OurFileRouter, any>
+                                    endpoint="productImage"
+                                    appearance={{
+                                        button: "bg-black text-white px-4 py-2 font-black uppercase text-[10px] rounded-none hover:bg-zinc-800 transition-all",
+                                        allowedContent: "hidden" // Hides the default "Images (4MB)" text
+                                    }}
+                                    content={{
+                                        button: "Upload Image"
+                                    }}
+                                    onUploadBegin={() => setIsUploading(true)} // Starts animation
+                                    onClientUploadComplete={(res) => {
+                                        setFormData({
+                                            ...formData,
+                                            images: [...formData.images, res[0].url]
+                                        });
+                                        setIsUploading(false); // Stops animation
+                                    }}
+                                    onUploadError={() => {
+                                        alert("Upload Failed!");
+                                        setIsUploading(false);
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        {/* PREVIEW GRID */}
+                        <div className="grid grid-cols-4 gap-3">
                             {formData.images.map((img, i) => (
-                                <div key={i} className="relative w-20 h-20 border-2 border-black">
-                                    <img src={img} className="w-full h-full object-contain" />
+                                <div key={i} className="relative aspect-square border-2 border-black bg-white group">
+                                    <img src={img} className="w-full h-full object-contain" alt="Preview" />
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -175,23 +207,28 @@ export default function AddProductModal() {
                                                 images: formData.images.filter((_, idx) => idx !== i)
                                             })
                                         }
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px] font-black"
-                                    >X</button>
+                                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 text-xs font-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-red-700 active:scale-90 transition-all"
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* UPLOADING ANIMATION PLACEHOLDER */}
+                            {isUploading && (
+                                <div className="aspect-square border-2 border-black border-dashed flex flex-col items-center justify-center bg-white animate-pulse">
+                                    <div className="w-6 h-6 border-4 border-black border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <p className="font-black text-[8px] uppercase tracking-tighter">Sending...</p>
+                                </div>
+                            )}
+
+                            {/* EMPTY SLOTS */}
+                            {!isUploading && Array.from({ length: 4 - formData.images.length }).map((_, i) => (
+                                <div key={i} className="aspect-square border-2 border-zinc-200 border-dashed bg-zinc-100 flex items-center justify-center">
+                                    <span className="text-zinc-300 font-black text-2xl">+</span>
                                 </div>
                             ))}
                         </div>
-
-                        {formData.images.length < 4 && (
-                            <UploadButton<OurFileRouter, any>
-                                endpoint="productImage"
-                                onClientUploadComplete={(res) => {
-                                    setFormData({
-                                        ...formData,
-                                        images: [...formData.images, res[0].url]
-                                    });
-                                }}
-                            />
-                        )}
                     </div>
 
                     <div className="col-span-2 flex gap-4 mt-6">
