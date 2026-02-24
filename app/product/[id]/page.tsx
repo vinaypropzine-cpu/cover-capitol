@@ -101,6 +101,10 @@ export default function ProductDetail() {
   if (loading) return <div className="p-20 text-center font-bold animate-pulse italic text-2xl uppercase">Loading Vault...</div>;
   if (!product) return <div className="p-20 text-center font-bold uppercase tracking-tighter text-4xl italic">Product Missing</div>;
 
+  // Calculate price dynamically based on selection
+  const currentTypeData = product?.types?.find((t: any) => t.name === selectedType);
+  const displayPrice = currentTypeData ? currentTypeData.price : product.price;
+
   return (
     <div className="min-h-screen bg-[#fafafa] text-black font-sans">
       {/* --- Header (Identical Design) --- */}
@@ -246,23 +250,23 @@ export default function ProductDetail() {
             <p className="text-gray-500 text-sm mb-6 leading-relaxed border-l-2 border-gray-200 pl-4">{product.description}</p>
 
             <div className="flex items-baseline gap-3 mb-8">
-              <span className="text-3xl font-black">₹{product.price}</span>
+              <span className="text-3xl font-black text-black">₹{displayPrice}</span>
               <span className="text-gray-400 line-through text-lg italic">₹1,299</span>
               <span className="text-green-600 font-bold text-sm uppercase">40% OFF</span>
             </div>
 
             {/* finish selection */}
-            {product.category === 'Tempered Glass' && product.types && (
+            {product.category === 'Tempered Glass' && product.types && product.types.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest">Select Finish</p>
                 <div className="flex gap-3">
-                  {product.types.map((type: string) => (
+                  {product.types.map((typeObj: any) => (
                     <button
-                      key={type}
-                      onClick={() => setSelectedType(type)}
-                      className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${selectedType === type ? 'border-black bg-black text-white' : 'border-gray-200 bg-white hover:border-gray-400'}`}
+                      key={typeObj.name}
+                      onClick={() => setSelectedType(typeObj.name)}
+                      className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all ${selectedType === typeObj.name ? 'border-black bg-black text-white shadow-lg' : 'border-gray-200 bg-white hover:border-gray-400'}`}
                     >
-                      {type}
+                      {typeObj.name}
                     </button>
                   ))}
                 </div>
@@ -271,13 +275,26 @@ export default function ProductDetail() {
 
             <div className="flex flex-col gap-3 mt-auto">
               <button
-                onClick={() => { addToCart(product); router.push('/cart'); }}
+                onClick={() => {
+                  // Create a 'variant' version of the product for the cart
+                  const productToCart = {
+                    ...product,
+                    price: displayPrice,
+                    selectedType: selectedType
+                  };
+                  addToCart(productToCart);
+                  router.push('/cart');
+                }}
                 style={{ backgroundColor: BRAND_YELLOW }}
                 className="w-full py-4 rounded-xl font-bold text-black uppercase flex items-center justify-center gap-2 hover:brightness-95 transition-all shadow-sm"
               >
                 <Zap size={18} fill="currentColor" /> Buy Now
               </button>
-              <button onClick={() => addToCart(product)} className="w-full py-4 rounded-xl font-bold text-black border-2 border-black uppercase flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-all">
+
+              <button
+                onClick={() => addToCart({ ...product, price: displayPrice, selectedType: selectedType })}
+                className="w-full py-4 rounded-xl font-bold text-black border-2 border-black uppercase flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-all"
+              >
                 <ShoppingBag size={18} /> Add to Cart
               </button>
             </div>

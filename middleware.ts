@@ -1,17 +1,26 @@
-// middleware.ts
-import { auth } from "./auth";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isOnAdmin = req.nextUrl.pathname.startsWith("/admin");
+// Define which routes are public (no login required)
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/product/(.*)',
+  '/admin(.*)',      // Your existing admin panel
+  '/login',          // Your existing login page
+  '/api/uploadthing',
+  '/api/razorpay'
+]);
 
-  if (isOnAdmin && !isLoggedIn) {
-    // Force the user back to login if they try to sneak into /admin
-    return Response.redirect(new URL("/login", req.nextUrl.origin));
+export default clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect();
   }
 });
 
 export const config = {
-  // Matches all routes inside the admin folder
-  matcher: ["/admin/:path*"],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 };

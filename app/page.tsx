@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
 // 1. IMPORT YOUR LIVE ACTION
 import { getProducts } from './lib/actions';
+// Add these imports at the very top of page.tsx
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
@@ -43,6 +45,15 @@ const BANNERS = [
     img: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=1200",
     color: "#232f3e"
   }
+];
+
+const REVIEWS = [
+  { user: "Arjun V.", model: "iPhone 15 Pro", comment: "Dropped my phone from a moving bike. The Cover Capitol glass shattered but my screen is FLAWLESS. Ordering my 2nd one now!", rating: 5 },
+  { user: "Sneha M.", model: "Galaxy S24 Ultra", comment: "The Privacy Shield is insane. Nobody can see my texts in the metro anymore. 10/10 recommendation.", rating: 5 },
+  { user: "Rohan S.", model: "Pixel 8 Pro", comment: "Installation was so easy. Literally zero bubbles. Best ₹799 I've ever spent on my phone.", rating: 5 },
+  { user: "Priya K.", model: "iPhone 13", comment: "Matte finish feels like butter. Amazing for gaming, no fingerprints at all!", rating: 5 },
+  { user: "Rohan S.", model: "Pixel 8 Pro", comment: "Installation was so easy. Literally zero bubbles. Best ₹799 I've ever spent on my phone.", rating: 5 },
+  { user: "Priya K.", model: "iPhone 13", comment: "Matte finish feels like butter. Amazing for gaming, no fingerprints at all!", rating: 5 },
 ];
 
 const TABS_DATA = {
@@ -233,7 +244,43 @@ export default function EcommerceSite() {
             />
             <button style={{ backgroundColor: BRAND_YELLOW }} className="px-5 text-black hover:brightness-90 transition-all"><Search size={20} /></button>
           </div>
+          
           <div className="flex items-center gap-4 md:gap-6">
+
+            <SignedOut>
+              <SignInButton mode="modal" appearance={{
+                elements: {
+                  formButtonPrimary: 'bg-[#fbea27] text-black font-black uppercase rounded-none border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white transition-all',
+                  card: 'border-4 border-black rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]',
+                  headerTitle: 'font-black uppercase italic text-2xl',
+                  input: 'border-2 border-black rounded-none font-bold focus:ring-0',
+                }
+              }}>
+                <button className="text-[10px] font-black uppercase border-2 border-white px-5 py-2 hover:bg-[#fbea27] hover:text-black hover:border-[#fbea27] transition-all">
+                  Join The Capitol
+                </button>
+              </SignInButton>
+            </SignedOut>
+
+            {/* IF LOGGED IN: Show the Profile Icon & Avatar */}
+            <SignedIn>
+              <div className="flex items-center gap-3 border-l border-white/20 pl-4">
+                <div className="hidden md:block text-right">
+                  <p className="text-[8px] font-black uppercase text-[#fbea27]">Citizen Verified</p>
+                  <p className="text-[10px] font-bold">MY ACCOUNT</p>
+                </div>
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "border-2 border-[#fbea27] w-9 h-9"
+                    }
+                  }}
+                />
+              </div>
+            </SignedIn>
+
+          
             <div className="relative cursor-pointer flex items-center gap-1 group" onClick={toggleCart}>
               <div className="relative">
                 <ShoppingBag size={24} style={{ color: BRAND_YELLOW }} />
@@ -418,7 +465,7 @@ export default function EcommerceSite() {
               <div className="max-w-7xl mx-auto px-4">
                 <h3 className="text-2xl font-bold mb-8 text-black">Best Sellers in Screen Protection</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {liveProducts.filter(p => p.tag === 'Best Seller').map(prod => (
+                  {liveProducts.filter(p => p.tag === 'best seller').map(prod => (
                     <div key={prod.id} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
                       <Link href={`/product/${prod.id}`}>
                         <div className="aspect-[4/5] bg-gray-100 rounded mb-4 overflow-hidden">
@@ -554,6 +601,99 @@ export default function EcommerceSite() {
                         </button>
                       </div>
                     ))}
+                </div>
+              </div>
+            </section>
+
+            {/* --- TOP DEALS SECTION --- */}
+            <section className="py-20 bg-white">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="flex items-center gap-4 mb-12">
+                  <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-black uppercase text-sm italic animate-pulse">
+                    Flash Sale
+                  </div>
+                  <h2 className="text-3xl font-black uppercase italic text-black">Top Deals</h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+                  {liveProducts
+                    .filter(p => p.tag?.toLowerCase() === 'top deal')
+                    .slice(0, 4)
+                    .map((prod) => (
+                      <div key={prod.id} className="bg-white border-2 border-black p-4 rounded-2xl hover:translate-y-[-4px] transition-all flex flex-col group text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
+                          <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
+                            <div className="absolute top-2 right-2 z-10">
+                              <span className="bg-black text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">
+                                🔥 Limited
+                              </span>
+                            </div>
+                            <img
+                              src={prod.images?.[0]}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                              alt={prod.name}
+                            />
+                          </div>
+                          <h5 className="font-bold text-sm mb-1 truncate text-black">{prod.name}</h5>
+                          <div className="flex items-center gap-2 mb-4">
+                            <p className="text-xl font-black text-red-600">₹{prod.price}</p>
+                            <p className="text-xs text-gray-400 line-through italic">₹{prod.price + 400}</p>
+                          </div>
+                        </Link>
+
+                        <button
+                          onClick={() => { addToCart(prod); toggleCart(); }}
+                          className="w-full py-3 bg-black text-white rounded-xl text-[11px] font-black uppercase hover:bg-zinc-800 transition-all"
+                        >
+                          Grab Now
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </section>
+
+            {/* --- CUSTOMER REVIEW TICKER --- */}
+            {/* --- THE WALL OF LOVE SECTION --- */}
+            <section className="py-24 bg-white border-t-4 border-black">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="text-center mb-16">
+                  <h2 className="text-5xl font-black uppercase italic tracking-tighter text-black mb-4">
+                    Trusted by the <span className="bg-[#fbea27] px-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">Capitol</span>
+                  </h2>
+                  <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">50,000+ Screens Protected Since 2025</p>
+                </div>
+
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                  {REVIEWS.map((rev, idx) => (
+                    <div
+                      key={idx}
+                      className="break-inside-avoid bg-white border-2 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-4px] transition-all group"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Sparkles key={i} size={14} fill={BRAND_YELLOW} className="text-black" />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-black text-zinc-300 group-hover:text-[#fbea27] transition-colors">VERIFIED BUYER</span>
+                      </div>
+
+                      <p className="text-black font-bold text-sm leading-relaxed mb-6 italic">
+                        "{rev.comment}"
+                      </p>
+
+                      <div className="flex items-center gap-4 border-t-2 border-zinc-50 pt-4">
+                        <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xs font-black text-[#fbea27] border-2 border-black">
+                          {rev.user[0]}
+                        </div>
+                        <div>
+                          <p className="text-black font-black text-xs uppercase tracking-tight">{rev.user}</p>
+                          <p className="text-zinc-400 text-[10px] font-bold uppercase">{rev.model}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
