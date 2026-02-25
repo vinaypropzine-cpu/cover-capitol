@@ -244,7 +244,7 @@ export default function EcommerceSite() {
             />
             <button style={{ backgroundColor: BRAND_YELLOW }} className="px-5 text-black hover:brightness-90 transition-all"><Search size={20} /></button>
           </div>
-          
+
           <div className="flex items-center gap-4 md:gap-6">
 
             <SignedOut>
@@ -280,7 +280,7 @@ export default function EcommerceSite() {
               </div>
             </SignedIn>
 
-          
+
             <div className="relative cursor-pointer flex items-center gap-1 group" onClick={toggleCart}>
               <div className="relative">
                 <ShoppingBag size={24} style={{ color: BRAND_YELLOW }} />
@@ -381,7 +381,7 @@ export default function EcommerceSite() {
           /* --- NORMAL HOME PAGE VIEW (Your existing sections) --- */
           <>
 
-            <section className="relative h-screen flex flex-col bg-white pt-[104px] overflow-hidden">
+            <section className="relative h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               <div className="flex-1 flex items-center max-w-7xl mx-auto px-6 w-full">
                 <div className="grid lg:grid-cols-2 gap-12 items-center w-full">
                   <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
