@@ -12,6 +12,8 @@
     "@clerk/nextjs": "^6.38.2",
     "@uploadthing/react": "^7.3.3",
     "dotenv": "^17.2.3",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
     "mongoose": "^9.1.5",

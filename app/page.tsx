@@ -12,6 +12,8 @@ import { useCartStore } from './useCartStore';
 import { getProducts } from './lib/actions';
 // Add these imports at the very top of page.tsx
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay'
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
@@ -92,7 +94,11 @@ export default function EcommerceSite() {
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
   const [activeTab, setActiveTab] = useState<'categories' | 'brands'>('categories');
   const [activeSubCategory, setActiveSubCategory] = useState<'screen' | 'camera' | 'back' | 'combo'>('screen');
-
+  // const [emblaRef] = useEmblaCarousel({ align: 'start', loop: true });
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { align: 'start', loop: true },
+    [Autoplay({ delay: 4000, stopOnInteraction: false })]
+  );
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
@@ -257,7 +263,7 @@ export default function EcommerceSite() {
                 }
               }}>
                 <button className="text-[10px] font-black uppercase border-2 border-white px-5 py-2 hover:bg-[#fbea27] hover:text-black hover:border-[#fbea27] transition-all">
-                  Join The Capitol
+                  login / signup
                 </button>
               </SignInButton>
             </SignedOut>
@@ -465,10 +471,12 @@ export default function EcommerceSite() {
               <div className="max-w-7xl mx-auto px-4">
                 <h3 className="text-2xl font-bold mb-8 text-black">Best Sellers in Screen Protection</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {liveProducts.filter(p => p.tag === 'best seller').map(prod => (
+                  {liveProducts.filter(p => p.tag === 'best seller')
+                  .slice(0, 5)
+                  .map(prod => (
                     <div key={prod.id} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
                       <Link href={`/product/${prod.id}`}>
-                        <div className="aspect-[4/5] bg-gray-100 rounded mb-4 overflow-hidden">
+                        <div className="aspect-[5/5] bg-gray-100 rounded mb-4 overflow-hidden">
                           <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <h5 className="font-medium text-xs line-clamp-2 h-8 mb-2 group-hover:text-blue-600 text-black">{prod.name}</h5>
@@ -653,47 +661,60 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- CUSTOMER REVIEW TICKER --- */}
-            {/* --- THE WALL OF LOVE SECTION --- */}
-            <section className="py-24 bg-white border-t-4 border-black">
-              <div className="max-w-7xl mx-auto px-6">
+            {/* --- UPDATED TESTIMONIALS WITH SIDE NAVIGATION --- */}
+            <section className="py-24 bg-white border-t-4 border-black overflow-hidden relative group">
+              <div className="max-w-7xl mx-auto px-6 relative">
+
+                {/* 1. Simplified Heading */}
                 <div className="text-center mb-16">
-                  <h2 className="text-5xl font-black uppercase italic tracking-tighter text-black mb-4">
-                    Trusted by the <span className="bg-[#fbea27] px-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">Capitol</span>
+                  <p className="text-zinc-400 font-bold uppercase tracking-[0.3em] text-[10px] mb-2">What Our Citizens Say</p>
+                  <h2 className="text-5xl font-black uppercase italic tracking-tighter text-black">
+                    OUR <span className="bg-[#fbea27] px-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">TESTIMONIALS</span>
                   </h2>
-                  <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">50,000+ Screens Protected Since 2025</p>
                 </div>
 
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                  {REVIEWS.map((rev, idx) => (
-                    <div
-                      key={idx}
-                      className="break-inside-avoid bg-white border-2 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-4px] transition-all group"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Sparkles key={i} size={14} fill={BRAND_YELLOW} className="text-black" />
-                          ))}
-                        </div>
-                        <span className="text-[10px] font-black text-zinc-300 group-hover:text-[#fbea27] transition-colors">VERIFIED BUYER</span>
-                      </div>
+                {/* 2. Side Navigation Buttons (Placed Absolutely) */}
+                <button
+                  onClick={() => emblaApi?.scrollPrev()}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#fbea27] transition-all -translate-x-1/2 hidden md:flex items-center justify-center active:translate-y-[-48%] active:shadow-none"
+                >
+                  <ChevronLeft size={28} className="text-black" />
+                </button>
 
-                      <p className="text-black font-bold text-sm leading-relaxed mb-6 italic">
-                        "{rev.comment}"
-                      </p>
+                <button
+                  onClick={() => emblaApi?.scrollNext()}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#fbea27] transition-all translate-x-1/2 hidden md:flex items-center justify-center active:translate-y-[-48%] active:shadow-none"
+                >
+                  <ChevronRight size={28} className="text-black" />
+                </button>
 
-                      <div className="flex items-center gap-4 border-t-2 border-zinc-50 pt-4">
-                        <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xs font-black text-[#fbea27] border-2 border-black">
-                          {rev.user[0]}
-                        </div>
-                        <div>
-                          <p className="text-black font-black text-xs uppercase tracking-tight">{rev.user}</p>
-                          <p className="text-zinc-400 text-[10px] font-bold uppercase">{rev.model}</p>
+                {/* 3. The Carousel Viewport */}
+                <div className="overflow-hidden cursor-grab active:cursor-grabbing px-4" ref={emblaRef}>
+                  <div className="flex gap-8">
+                    {REVIEWS.map((rev, idx) => (
+                      <div key={idx} className="flex-[0_0_100%] md:flex-[0_0_33.33%] min-w-0 px-4">
+                        <div className="h-full bg-white border-2 border-black/10 p-10 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
+                          <div>
+                            <span className="text-5xl font-serif text-[#fbea27] leading-none italic select-none">“</span>
+                            <p className="text-zinc-700 font-medium text-lg leading-relaxed mt-[-10px]">
+                              {rev.comment}
+                            </p>
+                          </div>
+                          <div className="mt-10 pt-6 border-t border-zinc-100 flex items-center justify-between">
+                            <div>
+                              <h4 className="text-black font-black uppercase text-sm">{rev.user}</h4>
+                              <p className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest">{rev.model}</p>
+                            </div>
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Sparkles key={i} size={14} fill={BRAND_YELLOW} className="text-black" />
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
