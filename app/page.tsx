@@ -308,28 +308,65 @@ export default function EcommerceSite() {
           </nav>
         </div>
 
+        {/* --- UPDATED SCREEN PROTECTION DROPDOWN --- */}
         <AnimatePresence>
           {activeMenu && (
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               onMouseEnter={() => setActiveMenu(activeMenu)}
               onMouseLeave={() => setActiveMenu(null)}
-              className="fixed top-26 left-0 w-full bg-white shadow-2xl border-b border-gray-200 z-[99]"
+              className="fixed top-[104px] left-0 w-full bg-white shadow-2xl border-b-4 border-black z-[99]"
             >
-              <div className="max-w-7xl mx-auto p-8 grid grid-cols-4 gap-8">
-                {activeMenu === 'screen' ? SCREEN_PROTECTION_MODES.map(item => (
-                  <div key={item.name} className="flex flex-col gap-3 group cursor-pointer">
-                    <div className="aspect-video bg-gray-50 rounded-lg overflow-hidden border">
-                      <img src={item.img} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              <div className="max-w-7xl mx-auto p-10 grid grid-cols-3 gap-12">
+                {activeMenu === 'screen' ? (
+                  <>
+                    {/* Column 1: Shop By Device */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Device</h4>
+                      <ul className="flex flex-col gap-3">
+                        {['Mobile', 'Tablet', 'Smartwatch'].map(item => (
+                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <h4 className="text-black font-bold text-sm">{item.name}</h4>
-                  </div>
-                )) : DEVICE_BRANDS.map(item => (
-                  <div key={item.brand} className="flex flex-col gap-2">
-                    <h4 className="text-black font-black text-sm uppercase border-b pb-2">{item.brand}</h4>
-                    {item.models.map(m => <p key={m} className="text-gray-500 text-xs hover:text-black cursor-pointer py-1">{m}</p>)}
-                  </div>
-                ))}
+
+                    {/* Column 2: Shop By Type */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Type</h4>
+                      <ul className="flex flex-col gap-3">
+                        {['Normal', 'UV', 'Edge to Edge'].map(item => (
+                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Column 3: Shop By Category */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Category</h4>
+                      <ul className="flex flex-col gap-3">
+                        {['Clear', 'Matte', 'Privacy'].map(item => (
+                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  /* Keep your existing Shop By Device (Brands) logic for the other menu here */
+                  DEVICE_BRANDS.map(item => (
+                    <div key={item.brand} className="flex flex-col gap-2">
+                      <h4 className="text-black font-black text-sm uppercase border-b-2 border-black pb-2">{item.brand}</h4>
+                      {item.models.map(m => <p key={m} className="text-zinc-500 text-xs font-bold hover:text-black cursor-pointer py-1 uppercase">{m}</p>)}
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}
@@ -472,19 +509,19 @@ export default function EcommerceSite() {
                 <h3 className="text-2xl font-bold mb-8 text-black">Best Sellers in Screen Protection</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {liveProducts.filter(p => p.tag === 'best seller')
-                  .slice(0, 5)
-                  .map(prod => (
-                    <div key={prod.id} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
-                      <Link href={`/product/${prod.id}`}>
-                        <div className="aspect-[5/5] bg-gray-100 rounded mb-4 overflow-hidden">
-                          <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        </div>
-                        <h5 className="font-medium text-xs line-clamp-2 h-8 mb-2 group-hover:text-blue-600 text-black">{prod.name}</h5>
-                        <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                      </Link>
-                      <button onClick={() => addToCart(prod)} style={{ backgroundColor: BRAND_YELLOW }} className="mt-auto py-2 rounded-md text-[10px] font-bold text-black border border-black/10 active:scale-95 transition-all uppercase">Add to Cart</button>
-                    </div>
-                  ))}
+                    .slice(0, 5)
+                    .map(prod => (
+                      <div key={prod.id} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
+                        <Link href={`/product/${prod.id}`}>
+                          <div className="aspect-[5/5] bg-gray-100 rounded mb-4 overflow-hidden">
+                            <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          </div>
+                          <h5 className="font-medium text-xs line-clamp-2 h-8 mb-2 group-hover:text-blue-600 text-black">{prod.name}</h5>
+                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
+                        </Link>
+                        <button onClick={() => addToCart(prod)} style={{ backgroundColor: BRAND_YELLOW }} className="mt-auto py-2 rounded-md text-[10px] font-bold text-black border border-black/10 active:scale-95 transition-all uppercase">Add to Cart</button>
+                      </div>
+                    ))}
                 </div>
               </div>
             </section>

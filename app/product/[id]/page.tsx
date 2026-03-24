@@ -3,43 +3,31 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-// 1. Swap static data for your live action
 import { getProducts } from '@/app/lib/actions';
 import { useCartStore } from '../../useCartStore';
 import {
-  ChevronLeft, ShoppingBag, Zap, CheckCircle2, ArrowRight, Search, ChevronDown, Filter,
-  ShieldCheck, ChevronRight, X, Trash2
+  ShoppingBag, Zap, CheckCircle2, ArrowRight, ChevronDown, 
+  ShieldCheck, X, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
+// 1. Import your reusable Navbar component
+import Navbar from '@/app/components/Navbar'; 
+
 const BRAND_YELLOW = '#fbea27';
-
-const SCREEN_PROTECTION_MODES = [
-  { name: 'Tempered Glass', img: '/tempered-glass.jpg' },
-  { name: 'Camera Guard', img: '/camera-guard.jpg' },
-  { name: 'Back ScreenGuard', img: '/back-screenguard.jpg' },
-  { name: 'Combo', img: '/combo.jpg' }
-];
-
-const DEVICE_BRANDS = [
-  { brand: 'Apple', models: ['iPhone 15', 'iPhone 14', 'iPhone 13'] },
-  { brand: 'Samsung', models: ['Galaxy S24', 'Galaxy S23', 'Galaxy A54'] },
-  { brand: 'OnePlus', models: ['OnePlus 12', 'OnePlus 11', 'OnePlus 10'] },
-  { brand: 'Xiaomi', models: ['Redmi Note 13', 'Mi 14', 'Poco X5'] }
-];
 
 export default function ProductDetail() {
   const params = useParams();
   const router = useRouter();
-  const BRAND_YELLOW = '#fbea27';
 
-  // 2. New states to hold live database data
+  // 2. Add search state required by the Navbar component
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [product, setProduct] = useState<any>(null);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedType, setSelectedType] = useState('Clear');
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
 
@@ -76,15 +64,12 @@ export default function ProductDetail() {
   useEffect(() => {
     const fetchProductData = async () => {
       setLoading(true);
-      // Ensure the ID is correctly parsed from the URL
       const productId = Number(params.id);
-
-      const allItems = await getProducts(); //
+      const allItems = await getProducts(); 
       const foundProduct = allItems.find((p: any) => p.id === productId);
 
       if (foundProduct) {
         setProduct(foundProduct);
-        // Find related products based on the same model
         const related = allItems
           .filter((p: any) => p.model === foundProduct.model && p.id !== foundProduct.id)
           .slice(0, 3);
@@ -101,13 +86,16 @@ export default function ProductDetail() {
   if (loading) return <div className="p-20 text-center font-bold animate-pulse italic text-2xl uppercase">Loading Vault...</div>;
   if (!product) return <div className="p-20 text-center font-bold uppercase tracking-tighter text-4xl italic">Product Missing</div>;
 
-  // Calculate price dynamically based on selection
   const currentTypeData = product?.types?.find((t: any) => t.name === selectedType);
   const displayPrice = currentTypeData ? currentTypeData.price : product.price;
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-black font-sans">
-      {/* --- Header (Identical Design) --- */}
+      
+      {/* 3. Replaced hardcoded header logic with the Component */}
+      <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+
+      {/* Cart Drawer Logic (Retained for functionality) */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -121,7 +109,7 @@ export default function ProductDetail() {
                 {items.length === 0 ? (
                   <div className="text-center py-20">
                     <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500 font-medium text-black">Your cart is empty.</p>
+                    <p className="text-gray-500 font-medium">Your cart is empty.</p>
                   </div>
                 ) : (
                   items.map((item) => (
@@ -129,25 +117,25 @@ export default function ProductDetail() {
                       <img src={item.images[0]} className="w-20 h-20 object-cover rounded-md" alt={item.name} />
                       <div className="flex-1">
                         <h4 className="font-bold text-sm">{item.name}</h4>
-                        <p className="text-orange-700 font-bold text-sm mt-1">₹{item.price}</p>
-                        <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                        <p className="text-red-600 font-black text-sm mt-1">₹{item.price}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg self-start transition-colors"><Trash2 size={18} /></button>
+                      <button onClick={() => removeFromCart(item.id)} className="text-zinc-400 hover:text-red-500 p-2 transition-colors"><Trash2 size={18} /></button>
                     </div>
                   ))
                 )}
               </div>
               <div className="p-6 border-t bg-gray-50">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="font-medium text-gray-600">Subtotal:</span>
-                  <span className="text-xl font-bold text-[#B12704]">
+                  <span className="font-bold uppercase text-[10px] tracking-widest text-zinc-400">Subtotal:</span>
+                  <span className="text-xl font-black text-black">
                     ₹{items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
                   </span>
                 </div>
                 <button
                   onClick={handlePayment}
                   style={{ backgroundColor: BRAND_YELLOW }}
-                  className="w-full py-4 rounded-lg font-bold text-sm shadow-sm hover:brightness-95 transition-all text-black"
+                  className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-0 transition-all text-black"
                 >
                   Proceed to Buy
                 </button>
@@ -157,67 +145,7 @@ export default function ProductDetail() {
         )}
       </AnimatePresence>
 
-      <header className="fixed top-0 w-full z-[100] bg-[#131921] text-white">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
-          <div className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-            <div style={{ backgroundColor: BRAND_YELLOW }} className="w-8 h-8 rounded-full flex items-center justify-center"><span className="text-black font-black text-xl italic">C</span></div>
-            <h1 className="text-xl font-black tracking-tight italic hidden sm:block">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
-          </div>
-          <div className="flex-1 flex h-10 overflow-hidden rounded-md group">
-            <div className="hidden lg:flex items-center px-4 bg-gray-100 text-gray-600 text-xs border-r border-gray-300 cursor-pointer hover:bg-gray-200">All <ChevronDown size={14} className="ml-1" /></div>
-            <input type="text" placeholder="Search for screen guards, privacy glass..." className="flex-1 px-4 text-sm text-black outline-none bg-white" />
-            <button style={{ backgroundColor: BRAND_YELLOW }} className="px-5 text-black hover:brightness-90 transition-all"><Search size={20} /></button>
-          </div>
-          <div className="flex items-center gap-4 md:gap-6">
-            <div className="relative cursor-pointer flex items-center gap-1 group" onClick={toggleCart}>
-              <div className="relative">
-                <ShoppingBag size={24} style={{ color: BRAND_YELLOW }} />
-                <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{totalItems()}</span>
-              </div>
-              <span className="text-xs font-bold self-end hidden sm:block">Cart</span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[#232f3e] border-t border-white/5 overflow-x-auto">
-          <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-center gap-8 text-xs font-bold whitespace-nowrap">
-            <div className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" onMouseEnter={() => setActiveMenu('screen')} onMouseLeave={() => setActiveMenu(null)}>Screen Protection <ChevronDown size={12} /></div>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Camera Guard</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Back ScreenGuard</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Combo</a>
-            <div className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" onMouseEnter={() => setActiveMenu('device')} onMouseLeave={() => setActiveMenu(null)}>Shop By Device <ChevronDown size={12} /></div>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Best Sellers</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors text-orange-400">Deals</a>
-          </nav>
-        </div>
-
-        <AnimatePresence>
-          {activeMenu && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onMouseEnter={() => setActiveMenu(activeMenu)}
-              onMouseLeave={() => setActiveMenu(null)}
-              className="fixed top-26 left-0 w-full bg-white shadow-2xl border-b border-gray-200 z-[99]"
-            >
-              <div className="max-w-7xl mx-auto p-8 grid grid-cols-4 gap-8">
-                {activeMenu === 'screen' ? SCREEN_PROTECTION_MODES.map(item => (
-                  <div key={item.name} className="flex flex-col gap-3 group cursor-pointer">
-                    <div className="aspect-video bg-gray-50 rounded-lg overflow-hidden border">
-                      <img src={item.img} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    </div>
-                    <h4 className="text-black font-bold text-sm">{item.name}</h4>
-                  </div>
-                )) : DEVICE_BRANDS.map(item => (
-                  <div key={item.brand} className="flex flex-col gap-2">
-                    <h4 className="text-black font-black text-sm uppercase border-b pb-2">{item.brand}</h4>
-                    {item.models.map(m => <p key={m} className="text-gray-500 text-xs hover:text-black cursor-pointer py-1">{m}</p>)}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
+      {/* --- Main Product Section (Adjusted Margin to 104px) --- */}
       <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12" style={{ marginTop: '96px' }}>
         <div className="grid lg:grid-cols-12 gap-12">
 
@@ -348,6 +276,7 @@ export default function ProductDetail() {
           </section>
         )}
       </main>
+      
     </div>
   );
 }
