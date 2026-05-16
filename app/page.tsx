@@ -10,10 +10,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
 // 1. IMPORT YOUR LIVE ACTION
 import { getProducts } from './lib/actions';
-// Add these imports at the very top of page.tsx
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+// REPLACED CLERK WITH FIREBASE AUTH
+import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
+import Navbar from '@/app/components/Navbar';
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
@@ -75,12 +76,12 @@ const TABS_DATA = {
 
 export default function EcommerceSite() {
   const [mounted, setMounted] = React.useState(false);
-  // 2. NEW STATE: To store live database products
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
+  // CONNECTED TO FIREBASE AUTH
+  const { user } = useAuth();
 
   useEffect(() => {
     setMounted(true);
-    // 3. FETCH DATA on mount from Atlas
     const fetchFromAtlas = async () => {
       const data = await getProducts();
       setLiveProducts(data);
@@ -88,29 +89,23 @@ export default function EcommerceSite() {
     fetchFromAtlas();
   }, []);
 
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
   const [activeTab, setActiveTab] = useState<'categories' | 'brands'>('categories');
   const [activeSubCategory, setActiveSubCategory] = useState<'screen' | 'camera' | 'back' | 'combo'>('screen');
-  // const [emblaRef] = useEmblaCarousel({ align: 'start', loop: true });
+  
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: 'start', loop: true },
     [Autoplay({ delay: 4000, stopOnInteraction: false })]
   );
   const [currentBanner, setCurrentBanner] = useState(0);
 
+  // REMOVED REDUNDANT SCROLL LISTENER (NOW HANDLED BY NAVBAR COMPONENT)
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % BANNERS.length);
     }, 5000);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, []);
 
   const SCREEN_PROTECTION_MODES = [
@@ -141,7 +136,6 @@ export default function EcommerceSite() {
     combo: 'Combo'
   };
 
-  // This filters products by name, brand, or category
   const searchResults = liveProducts.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -180,9 +174,11 @@ export default function EcommerceSite() {
 
   if (!mounted) return <div className="min-h-screen bg-[#F2F2F2]" />;
 
-
   return (
     <div className="min-h-screen bg-[#F2F2F2] text-[#131921] font-sans overflow-x-hidden">
+
+      {/* 1. REUSABLE NAVBAR COMPONENT (Purged old hardcoded header) */}
+      <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <AnimatePresence>
         {isCartOpen && (
@@ -233,151 +229,9 @@ export default function EcommerceSite() {
         )}
       </AnimatePresence>
 
-      <header className="fixed top-0 w-full z-[100] bg-[#131921] text-white">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
-          <div className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-            <img src="/logo.svg" alt="Cover Capital Logo" className="w-11 h-11 object-contain" />
-            <h1 className="text-xl font-black tracking-tight italic hidden sm:block">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
-          </div>
-          <div className="flex-1 flex h-10 overflow-hidden rounded-md group">
-            <div className="hidden lg:flex items-center px-4 bg-gray-100 text-gray-600 text-xs border-r border-gray-300 cursor-pointer hover:bg-gray-200">All <ChevronDown size={14} className="ml-1" /></div>
-            <input
-              type="text"
-              placeholder="Search for screen guards, privacy glass..."
-              className="flex-1 px-4 text-sm text-black outline-none bg-white"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button style={{ backgroundColor: BRAND_YELLOW }} className="px-5 text-black hover:brightness-90 transition-all"><Search size={20} /></button>
-          </div>
-
-          <div className="flex items-center gap-4 md:gap-6">
-
-            <SignedOut>
-              <SignInButton mode="modal" appearance={{
-                elements: {
-                  formButtonPrimary: 'bg-[#fbea27] text-black font-black uppercase rounded-none border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white transition-all',
-                  card: 'border-4 border-black rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]',
-                  headerTitle: 'font-black uppercase italic text-2xl',
-                  input: 'border-2 border-black rounded-none font-bold focus:ring-0',
-                }
-              }}>
-                <button className="text-[10px] font-black uppercase border-2 border-white px-5 py-2 hover:bg-[#fbea27] hover:text-black hover:border-[#fbea27] transition-all">
-                  login / signup
-                </button>
-              </SignInButton>
-            </SignedOut>
-
-            {/* IF LOGGED IN: Show the Profile Icon & Avatar */}
-            <SignedIn>
-              <div className="flex items-center gap-3 border-l border-white/20 pl-4">
-                <div className="hidden md:block text-right">
-                  <p className="text-[8px] font-black uppercase text-[#fbea27]">Citizen Verified</p>
-                  <p className="text-[10px] font-bold">MY ACCOUNT</p>
-                </div>
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: "border-2 border-[#fbea27] w-9 h-9"
-                    }
-                  }}
-                />
-              </div>
-            </SignedIn>
-
-
-            <div className="relative cursor-pointer flex items-center gap-1 group" onClick={toggleCart}>
-              <div className="relative">
-                <ShoppingBag size={24} style={{ color: BRAND_YELLOW }} />
-                <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{totalItems()}</span>
-              </div>
-              <span className="text-xs font-bold self-end hidden sm:block">Cart</span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[#232f3e] border-t border-white/5 overflow-x-auto">
-          <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-center gap-8 text-xs font-bold whitespace-nowrap">
-            <div className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" onMouseEnter={() => setActiveMenu('screen')} onMouseLeave={() => setActiveMenu(null)}>Screen Protection <ChevronDown size={12} /></div>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Camera Guard</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Back ScreenGuard</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Combo</a>
-            <div className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" onMouseEnter={() => setActiveMenu('device')} onMouseLeave={() => setActiveMenu(null)}>Shop By Device <ChevronDown size={12} /></div>
-            <a href="#" className="hover:text-[#fbea27] transition-colors">Best Sellers</a>
-            <a href="#" className="hover:text-[#fbea27] transition-colors text-orange-400">Deals</a>
-          </nav>
-        </div>
-
-        {/* --- UPDATED SCREEN PROTECTION DROPDOWN --- */}
-        <AnimatePresence>
-          {activeMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              onMouseEnter={() => setActiveMenu(activeMenu)}
-              onMouseLeave={() => setActiveMenu(null)}
-              className="fixed top-[104px] left-0 w-full bg-white shadow-2xl border-b-4 border-black z-[99]"
-            >
-              <div className="max-w-7xl mx-auto p-10 grid grid-cols-3 gap-12">
-                {activeMenu === 'screen' ? (
-                  <>
-                    {/* Column 1: Shop By Device */}
-                    <div className="flex flex-col gap-4">
-                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Device</h4>
-                      <ul className="flex flex-col gap-3">
-                        {['Mobile', 'Tablet', 'Smartwatch'].map(item => (
-                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Column 2: Shop By Type */}
-                    <div className="flex flex-col gap-4">
-                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Type</h4>
-                      <ul className="flex flex-col gap-3">
-                        {['Normal', 'UV', 'Edge to Edge'].map(item => (
-                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Column 3: Shop By Category */}
-                    <div className="flex flex-col gap-4">
-                      <h4 className="text-black font-black uppercase text-sm border-b-2 border-black pb-2 tracking-widest">Shop By Category</h4>
-                      <ul className="flex flex-col gap-3">
-                        {['Clear', 'Matte', 'Privacy'].map(item => (
-                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-2 transition-all cursor-pointer uppercase text-xs">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </>
-                ) : (
-                  /* Keep your existing Shop By Device (Brands) logic for the other menu here */
-                  DEVICE_BRANDS.map(item => (
-                    <div key={item.brand} className="flex flex-col gap-2">
-                      <h4 className="text-black font-black text-sm uppercase border-b-2 border-black pb-2">{item.brand}</h4>
-                      {item.models.map(m => <p key={m} className="text-zinc-500 text-xs font-bold hover:text-black cursor-pointer py-1 uppercase">{m}</p>)}
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      {/* ... Header ends here ... */}
-
       <main className="pt-[104px]">
         {searchQuery.length > 0 ? (
-          /* --- SEARCH RESULTS VIEW: NOW INTERACTIVE --- */
+          /* --- SEARCH RESULTS VIEW: FIXED DUPLICATE KEY ERRORS --- */
           <section className="py-20 max-w-7xl mx-auto px-6 min-h-screen">
             <h2 className="text-3xl font-black uppercase mb-8 text-black">
               Results for: <span style={{ color: BRAND_YELLOW }}>{searchQuery}</span>
@@ -385,10 +239,8 @@ export default function EcommerceSite() {
 
             {searchResults.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {searchResults.map((prod) => (
-                  <div key={prod.id} className="bg-white border p-4 rounded-2xl shadow-sm text-black flex flex-col group transition-all hover:shadow-xl">
-
-                    {/* --- WRAPPER LINK START --- */}
+                {searchResults.map((prod, idx) => (
+                  <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl shadow-sm text-black flex flex-col group transition-all hover:shadow-xl">
                     <Link href={`/product/${prod.id}`} className="cursor-pointer">
                       <div className="aspect-4/5 overflow-hidden rounded-xl mb-4 bg-gray-50">
                         <img
@@ -402,8 +254,6 @@ export default function EcommerceSite() {
                       </h5>
                       <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
                     </Link>
-                    {/* --- WRAPPER LINK END --- */}
-
                     <button
                       onClick={() => { addToCart(prod); toggleCart(); }}
                       style={{ backgroundColor: BRAND_YELLOW }}
@@ -421,9 +271,8 @@ export default function EcommerceSite() {
             )}
           </section>
         ) : (
-          /* --- NORMAL HOME PAGE VIEW (Your existing sections) --- */
+          /* --- NORMAL HOME PAGE VIEW --- */
           <>
-
             <section className="relative h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               <div className="flex-1 flex items-center max-w-7xl mx-auto px-6 w-full">
                 <div className="grid lg:grid-cols-2 gap-12 items-center w-full">
@@ -503,15 +352,15 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- BEST SELLERS: NOW USING LIVE DATA --- */}
+            {/* --- BEST SELLERS: UNIQUE KEY IMPLEMENTED --- */}
             <section className="py-20 bg-white">
               <div className="max-w-7xl mx-auto px-4">
                 <h3 className="text-2xl font-bold mb-8 text-black">Best Sellers in Screen Protection</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {liveProducts.filter(p => p.tag === 'best seller')
                     .slice(0, 5)
-                    .map(prod => (
-                      <div key={prod.id} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
+                    .map((prod, idx) => (
+                      <div key={`${prod.id}-${idx}`} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
                         <Link href={`/product/${prod.id}`}>
                           <div className="aspect-[5/5] bg-gray-100 rounded mb-4 overflow-hidden">
                             <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -526,7 +375,7 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- ALL PRODUCTS: NOW USING LIVE DATA --- */}
+            {/* --- ALL PRODUCTS: UNIQUE KEY IMPLEMENTED --- */}
             <section className="py-20 max-w-7xl mx-auto px-6">
               <div className="mb-12">
                 <h2 className="text-3xl font-black uppercase italic mb-8 text-black">All Products</h2>
@@ -550,11 +399,9 @@ export default function EcommerceSite() {
                 >
                   {liveProducts
                     .filter(p => p.category === categoryMap[activeSubCategory])
-                    .slice(0, 4) // This limits the display to exactly 4 items
-                    .map((prod) => (
-                      <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-lg transition-all flex flex-col group text-black">
-
-                        {/* --- WRAPPER LINK START --- */}
+                    .slice(0, 4)
+                    .map((prod, idx) => (
+                      <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl hover:shadow-lg transition-all flex flex-col group text-black">
                         <Link href={`/product/${prod.id}`} className="cursor-pointer">
                           <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
                             <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
@@ -565,16 +412,12 @@ export default function EcommerceSite() {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                               alt={prod.name}
                             />
-                            {/* Note: The 'Add to Bag' button overlay is still visible on hover but we keep it separate from the link below */}
                           </div>
                           <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
                             {prod.name}
                           </h5>
                           <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
                         </Link>
-                        {/* --- WRAPPER LINK END --- */}
-
-                        {/* Keeping the 'Add to Bag' button separate so it doesn't trigger navigation */}
                         <div className="relative">
                           <button
                             onClick={() => { addToCart(prod); toggleCart(); }}
@@ -584,7 +427,6 @@ export default function EcommerceSite() {
                             Add to Bag
                           </button>
                         </div>
-
                       </div>
                     ))}
                 </motion.div>
@@ -596,7 +438,7 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- TOP RATED SECTION: RECENT 4 ITEMS --- */}
+            {/* --- TOP RATED SECTION: UNIQUE KEY IMPLEMENTED --- */}
             <section className="py-20 bg-gray-50">
               <div className="max-w-7xl mx-auto px-6">
                 <div className="flex items-center justify-between mb-12">
@@ -612,11 +454,9 @@ export default function EcommerceSite() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
                   {liveProducts
                     .filter(p => p.tag === 'top rated')
-                    .slice(0, 4) // Limits to the 4 most recent top-rated items
-                    .map((prod) => (
-                      <div key={prod.id} className="bg-white border p-4 rounded-2xl hover:shadow-xl transition-all flex flex-col group text-black shadow-sm">
-
-                        {/* Link to Individual Product Page */}
+                    .slice(0, 4)
+                    .map((prod, idx) => (
+                      <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl hover:shadow-xl transition-all flex flex-col group text-black shadow-sm">
                         <Link href={`/product/${prod.id}`} className="cursor-pointer">
                           <div className="relative aspect-[4/5] bg-gray-100 rounded-xl mb-4 overflow-hidden">
                             <div className="absolute top-2 left-2 z-10 flex gap-2">
@@ -635,8 +475,6 @@ export default function EcommerceSite() {
                           </h5>
                           <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
                         </Link>
-
-                        {/* Quick Add Button */}
                         <button
                           onClick={() => { addToCart(prod); toggleCart(); }}
                           style={{ backgroundColor: BRAND_YELLOW }}
@@ -650,7 +488,7 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- TOP DEALS SECTION --- */}
+            {/* --- TOP DEALS SECTION: UNIQUE KEY IMPLEMENTED --- */}
             <section className="py-20 bg-white">
               <div className="max-w-7xl mx-auto px-6">
                 <div className="flex items-center gap-4 mb-12">
@@ -664,8 +502,8 @@ export default function EcommerceSite() {
                   {liveProducts
                     .filter(p => p.tag?.toLowerCase() === 'top deal')
                     .slice(0, 4)
-                    .map((prod) => (
-                      <div key={prod.id} className="bg-white border-2 border-black p-4 rounded-2xl hover:translate-y-[-4px] transition-all flex flex-col group text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    .map((prod, idx) => (
+                      <div key={`${prod.id}-${idx}`} className="bg-white border-2 border-black p-4 rounded-2xl hover:translate-y-[-4px] transition-all flex flex-col group text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <Link href={`/product/${prod.id}`} className="cursor-pointer">
                           <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
                             <div className="absolute top-2 right-2 z-10">
@@ -685,7 +523,6 @@ export default function EcommerceSite() {
                             <p className="text-xs text-gray-400 line-through italic">₹{prod.price + 400}</p>
                           </div>
                         </Link>
-
                         <button
                           onClick={() => { addToCart(prod); toggleCart(); }}
                           className="w-full py-3 bg-black text-white rounded-xl text-[11px] font-black uppercase hover:bg-zinc-800 transition-all"
@@ -698,34 +535,26 @@ export default function EcommerceSite() {
               </div>
             </section>
 
-            {/* --- UPDATED TESTIMONIALS WITH SIDE NAVIGATION --- */}
             <section className="py-24 bg-white border-t-4 border-black overflow-hidden relative group">
               <div className="max-w-7xl mx-auto px-6 relative">
-
-                {/* 1. Simplified Heading */}
                 <div className="text-center mb-16">
                   <p className="text-zinc-400 font-bold uppercase tracking-[0.3em] text-[10px] mb-2">What Our Citizens Say</p>
                   <h2 className="text-5xl font-black uppercase italic tracking-tighter text-black">
                     OUR <span className="bg-[#fbea27] px-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">TESTIMONIALS</span>
                   </h2>
                 </div>
-
-                {/* 2. Side Navigation Buttons (Placed Absolutely) */}
                 <button
                   onClick={() => emblaApi?.scrollPrev()}
                   className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#fbea27] transition-all -translate-x-1/2 hidden md:flex items-center justify-center active:translate-y-[-48%] active:shadow-none"
                 >
                   <ChevronLeft size={28} className="text-black" />
                 </button>
-
                 <button
                   onClick={() => emblaApi?.scrollNext()}
                   className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#fbea27] transition-all translate-x-1/2 hidden md:flex items-center justify-center active:translate-y-[-48%] active:shadow-none"
                 >
                   <ChevronRight size={28} className="text-black" />
                 </button>
-
-                {/* 3. The Carousel Viewport */}
                 <div className="overflow-hidden cursor-grab active:cursor-grabbing px-4" ref={emblaRef}>
                   <div className="flex gap-8">
                     {REVIEWS.map((rev, idx) => (
@@ -755,16 +584,40 @@ export default function EcommerceSite() {
                 </div>
               </div>
             </section>
-
           </>
         )}
       </main>
 
       <footer className="bg-[#131921] text-white py-20 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12 text-white">
-          <div><h2 className="text-xl font-black italic mb-6">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h2><p className="text-gray-400 text-sm leading-relaxed">India's leading brand for high-conversion protection tech.</p></div>
-          <div><h4 className="font-bold mb-6 text-[#fbea27] uppercase text-xs tracking-widest">Shop</h4><ul className="text-sm text-gray-400 space-y-3"><li>iPhone Glass</li><li>Samsung Glass</li><li>Privacy Shields</li></ul></div>
-          <div className="bg-[#232f3e] p-8 rounded-2xl"><h4 className="font-bold mb-4">Join the Capitol</h4><div className="flex bg-white rounded-lg p-1 overflow-hidden"><input type="text" placeholder="Email" className="flex-1 px-4 text-black text-xs outline-none" /><button style={{ backgroundColor: BRAND_YELLOW }} className="px-6 py-2 rounded-md text-black font-bold text-xs">GO</button></div></div>
+          <div>
+            <h2 className="text-xl font-black italic mb-6">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h2>
+            <p className="text-gray-400 text-sm leading-relaxed">India's leading brand for high-conversion protection tech.</p>
+          </div>
+          <div>
+            <h4 className="font-bold mb-6 text-[#fbea27] uppercase text-xs tracking-widest">Shop</h4>
+            <ul className="text-sm text-gray-400 space-y-3">
+              <li>iPhone Glass</li>
+              <li>Samsung Glass</li>
+              <li>Privacy Shields</li>
+            </ul>
+          </div>
+          <div className="bg-[#232f3e] p-8 rounded-2xl">
+            <h4 className="font-bold mb-4">Join the Capitol</h4>
+            <div className="flex bg-white rounded-lg p-1 overflow-hidden">
+              <input 
+                type="text" 
+                placeholder="Email" 
+                className="flex-1 px-4 text-black text-xs outline-none" 
+              />
+              <button 
+                style={{ backgroundColor: BRAND_YELLOW }} 
+                className="px-6 py-2 rounded-md text-black font-bold text-xs"
+              >
+                GO
+              </button>
+            </div>
+          </div>
         </div>
       </footer>
 

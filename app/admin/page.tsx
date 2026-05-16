@@ -6,6 +6,8 @@ import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
 import { revalidatePath } from "next/cache";
 import AddProductModal from "./AddProductModal";
+// 1. Add this import at the top of app/admin/page.tsx
+import EditProductModal from "./EditProductModal";
 
 export default async function AdminDashboard() {
     const products = await getProducts();
@@ -79,9 +81,7 @@ export default async function AdminDashboard() {
                                 {/* Control */}
                                 <td className="p-2">
                                     <div className="flex flex-col gap-1">
-                                        <button className="bg-black text-white text-[10px] font-bold py-1 px-3 rounded uppercase">
-                                            EDIT
-                                        </button>
+                                        <EditProductModal product={item} />
                                         <DeleteButton productId={item.id} productName={item.name} />
                                     </div>
                                 </td>
@@ -105,6 +105,30 @@ export async function deleteProduct(productId: string) {
         return { success: true };
     } catch (error) {
         console.error("Failed to delete product:", error);
+        return { success: false };
+    }
+}
+
+export async function updateProduct(productPayload: any) {
+    try {
+        await connectDB();
+        
+        // Find the product by its custom numeric ID and overwrite its data
+        const updated = await Product.findOneAndUpdate(
+            { id: Number(productPayload.id) },
+            { $set: productPayload },
+            { new: true } // Returns the modified document
+        );
+
+        if (!updated) {
+            return { success: false, error: "Product not found in Atlas vault." };
+        }
+
+        // Revalidate cache to ensure the dashboard instantly reflects the update
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update product inside database action:", error);
         return { success: false };
     }
 }

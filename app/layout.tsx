@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 // 1. Import the Provider
-import { ClerkProvider } from '@clerk/nextjs'
+// import { ClerkProvider } from '@clerk/nextjs'
+import { AuthProvider } from "./context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,20 +28,13 @@ export default function RootLayout({
 }>) {
   return (
     // 2. Wrap the HTML in ClerkProvider
-    <ClerkProvider>
+   <AuthProvider> {/* Replaced ClerkProvider */}
       <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body className={`${geistSans.variable} antialiased`}>
           {children}
-
-          {/* Load Razorpay Checkout Script */}
-          <Script
-            src="https://checkout.razorpay.com/v1/checkout.js"
-            strategy="lazyOnload"
-          />
+          <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         </body>
       </html>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
