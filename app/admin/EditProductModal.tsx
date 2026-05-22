@@ -206,6 +206,7 @@ export default function EditProductModal({ product }: { product: any }) {
                             <option value="">Select Tag</option>
                             <option value="best seller">Best Seller</option>
                             <option value="top rated">Top Rated</option>
+                            <option value="top deal">Top Deal</option>
                         </select>
                     </div>
 

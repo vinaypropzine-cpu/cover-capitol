@@ -33,6 +33,11 @@ export default function CategoryListingPage({
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [categoryName, setCategoryName] = useState<string>('');
 
+  // --- NEW MULTI-SELECT FILTER ARRAYS ---
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [selectedSubCats, setSelectedSubCats] = useState<string[]>([]);
+  const [selectedPrices, setSelectedPrices] = useState<number[]>([]);
+
   useEffect(() => {
     const loadProducts = async () => {
       const resolvedParams = await params;
@@ -44,11 +49,47 @@ export default function CategoryListingPage({
     loadProducts();
   }, [params]);
 
-  // Filter products by category AND search query for maximum utility
-  const filteredProducts = allProducts.filter((p: any) =>
-    p.category?.toLowerCase() === categoryName.toLowerCase() &&
-    (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || searchQuery === "")
-  );
+  // --- TOGGLE EVENT HANDLERS ---
+  const handleDeviceToggle = (device: string) => {
+    setSelectedDevices(prev => 
+      prev.includes(device) ? prev.filter(d => d !== device) : [...prev, device]
+    );
+  };
+
+  const handleSubCatToggle = (subCat: string) => {
+    setSelectedSubCats(prev => 
+      prev.includes(subCat) ? prev.filter(s => s !== subCat) : [...prev, subCat]
+    );
+  };
+
+  const handlePriceToggle = (maxPrice: number) => {
+    setSelectedPrices(prev => 
+      prev.includes(maxPrice) ? prev.filter(p => p !== maxPrice) : [...prev, maxPrice]
+    );
+  };
+
+  // --- ADVANCED EVALUATION PIPELINE: REPLACED OLD SIMPLE MAP WITH MULTI-FILTER INTERSECTION ---
+  const filteredProducts = allProducts.filter((p: any) => {
+    // A. Base Category Filter
+    const matchesCategory = p.category?.toLowerCase() === categoryName.toLowerCase();
+
+    // B. Reusable Navbar Input Search Filter
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || searchQuery === "";
+
+    // C. Device Type Filter Array (Mobile, Tablet, Smartwatch) - Case Insensitive
+    const matchesDevice = selectedDevices.length === 0 || 
+      selectedDevices.some(d => p.deviceType?.toLowerCase() === d.toLowerCase());
+
+    // D. Glass Category/SubCategory Filter Array (Normal, UV, Edge to Edge Membrane) - Case Insensitive
+    const matchesSubCat = selectedSubCats.length === 0 || 
+      selectedSubCats.some(s => p.subCategory?.toLowerCase() === s.toLowerCase());
+
+    // E. Price Tier Boundaries (Under 499, 399, 299, 199)
+    const matchesPrice = selectedPrices.length === 0 || 
+      selectedPrices.some(maxPrice => Number(p.price) <= maxPrice);
+
+    return matchesCategory && matchesSearch && matchesDevice && matchesSubCat && matchesPrice;
+  });
 
   const handlePayment = async () => {
     try {
@@ -112,7 +153,7 @@ export default function CategoryListingPage({
                 )}
               </div>
               <div className="p-6 border-t bg-gray-50">
-                <button onClick={handlePayment} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-0 transition-all">Proceed to Checkout</button>
+                <button onClick={handlePayment} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(251,234,39,1)] :translate-y-[-2px] active:translate-y-0 transition-all">Proceed to Checkout</button>
               </div>
             </motion.div>
           </>
@@ -124,38 +165,87 @@ export default function CategoryListingPage({
       <div className="max-w-7xl mx-auto px-6 pt-40 pb-20 flex flex-col md:flex-row gap-10">
 
         {/* LEFT SIDEBAR: Filters */}
-        <aside className="w-full md:w-64 flex-shrink-0 border-r-2 border-black/5 pr-0 md:pr-8 flex flex-col gap-10">
+        <aside className="w-full md:w-64 flex-shrink-0 border-r-2 border-black/5 pr-0 md:pr-8 flex flex-col gap-10 text-left">
           <div className="border-b-4 border-black pb-2 mb-2">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Refine Collection</h3>
           </div>
 
-          {/* Material Filter */}
+          {/* 1st FILTER CLUSTER: DEVICE TYPE */}
           <div>
-            <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Glass Type</h4>
+            <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Device Type</h4>
             <div className="flex flex-col gap-3">
-              {['Tempered', 'Privacy', 'UV Glass', 'Matte'].map((type) => (
-                <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" className="w-4 h-4 border-2 border-black rounded-none accent-black" />
-                  <span className="text-xs font-bold text-zinc-500 group-hover:text-black uppercase transition-all">{type}</span>
+              {[
+                { id: "Mobile", label: "Mobile" },
+                { id: "Tablet", label: "Tablet" },
+                { id: "Smartwatch", label: "Smartwatch" }
+              ].map((item) => (
+                <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedDevices.includes(item.id)}
+                    onChange={() => handleDeviceToggle(item.id)}
+                    className="w-4 h-4 border-2 border-black rounded-none accent-black cursor-pointer" 
+                  />
+                  <span className={`text-xs font-bold transition-all uppercase ${selectedDevices.includes(item.id) ? 'text-black font-black' : 'text-zinc-500 group-hover:text-black'}`}>
+                    {item.label}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Price Filter */}
+          {/* 2nd FILTER CLUSTER: GLASS CATEGORY/SUBCATEGORY */}
           <div>
-            <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Price Range</h4>
-            <div className="space-y-2">
-              {['Under ₹499', '₹500 - ₹999', 'Over ₹1000'].map(p => (
-                <p key={p} className="text-xs font-bold text-zinc-500 hover:text-black cursor-pointer uppercase transition-all hover:translate-x-1">{p}</p>
+            <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Category Type</h4>
+            <div className="flex flex-col gap-3">
+              {[
+                { id: "Normal", label: "Normal" },
+                { id: "UV", label: "UV" },
+                { id: "Edge to Edge Membrane", label: "Edge to Edge Membrane" }
+              ].map((item) => (
+                <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedSubCats.includes(item.id)}
+                    onChange={() => handleSubCatToggle(item.id)}
+                    className="w-4 h-4 border-2 border-black rounded-none accent-black cursor-pointer" 
+                  />
+                  <span className={`text-xs font-bold transition-all uppercase ${selectedSubCats.includes(item.id) ? 'text-black font-black' : 'text-zinc-500 group-hover:text-black'}`}>
+                    {item.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 3rd FILTER CLUSTER: PRICE LIMIT BUDGET BOUNDARIES */}
+          <div>
+            <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Price Filter</h4>
+            <div className="flex flex-col gap-3">
+              {[
+                { val: 199, label: "Under ₹199" },
+                { val: 299, label: "Under ₹299" },
+                { val: 399, label: "Under ₹399" },
+                { val: 499, label: "Under ₹499" }
+              ].map((tier) => (
+                <label key={tier.val} className="flex items-center gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedPrices.includes(tier.val)}
+                    onChange={() => handlePriceToggle(tier.val)}
+                    className="w-4 h-4 border-2 border-black rounded-none accent-black cursor-pointer" 
+                  />
+                  <span className={`text-xs font-bold transition-all uppercase ${selectedPrices.includes(tier.val) ? 'text-black font-black' : 'text-zinc-500 group-hover:text-black'}`}>
+                    {tier.label}
+                  </span>
+                </label>
               ))}
             </div>
           </div>
         </aside>
 
-        {/* LEFT COLUMN: Product Grid */}
         {/* RIGHT COLUMN: Product Grid */}
-        <main className="flex-1">
+        <main className="flex-1 text-left">
           <div className="flex flex-col md:flex-row justify-between items-end mb-10 border-b-4 border-black pb-4 gap-4">
             <div>
               <h2 className="text-3xl font-black uppercase italic tracking-tighter text-black">
@@ -166,29 +256,27 @@ export default function CategoryListingPage({
               </p>
             </div>
 
-            <button className="flex items-center gap-3 bg-black text-white px-6 py-3 rounded-none text-[10px] font-black uppercase shadow-[4px_4px_0px_0px_rgba(251,234,39,1)] hover:bg-[#fbea27] hover:text-black transition-all">
-              Sort By <ChevronDown size={14} />
-            </button>
+            {/* DISCARDED SORT BY BUTTON BLOCK PER YOUR INSTRUCTIONS */}
           </div>
 
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((prod, idx) => (
-                <div key={`${prod.id}-${idx}`} className="group border-2 border-black/5 p-4 hover:border-black transition-all bg-white relative">
+                <div key={`${prod.id}-${idx}`} className="group border-2 border-black/5 p-4 hover:border-black transition-all bg-white relative shadow-sm">
                   <Link href={`/product/${prod.id}`} className="block aspect-[4/5] bg-zinc-50 mb-4 overflow-hidden relative border border-black/5">
                     <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 text-[8px] font-black uppercase tracking-widest">{prod.tag || 'In Stock'}</span>
                     <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={prod.name} />
                   </Link>
-                  <h4 className="font-black uppercase text-[11px] mb-1 truncate tracking-tight">{prod.name}</h4>
+                  <h4 className="font-black uppercase text-[11px] mb-1 truncate tracking-tight text-black">{prod.name}</h4>
                   <p className="text-lg font-black text-red-600 mb-4">₹{prod.price}</p>
-                  <button onClick={() => { addToCart(prod); toggleCart(); }} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-3 font-black uppercase text-[10px] border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all">Add To Cart</button>
+                  <button onClick={() => { addToCart(prod); toggleCart(); }} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-3 font-black uppercase text-[10px] border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black">Add To Cart</button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="py-20 text-center bg-zinc-50 border-2 border-dashed border-zinc-200">
               <Package size={48} className="mx-auto text-zinc-300 mb-4" />
-              <p className="font-black uppercase text-zinc-400 text-xs">The Vault is empty for "{searchQuery}"</p>
+              <p className="font-black uppercase text-zinc-400 text-xs">The Vault is empty for current parameters</p>
             </div>
           )}
         </main>

@@ -163,6 +163,7 @@ export default function AddProductModal() {
                         <option value="">Select Tag</option>
                         <option value="best seller">Best Seller</option>
                         <option value="top rated">Top Rated</option>
+                        <option value="top deal">Top Deal</option>
                     </select>
 
                     {/* IMAGE UPLOAD */}

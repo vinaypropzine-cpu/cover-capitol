@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  ShoppingBag, Search, ChevronDown, ShieldCheck, Zap, X, Trash2, Menu, User 
+import {
+  ShoppingBag, Search, ChevronDown, ShieldCheck, Zap, X, Trash2, Menu, User
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCartStore } from '../useCartStore'; 
+import { useCartStore } from '../useCartStore';
 import { useAuth } from '../context/AuthContext'; // Custom Firebase Hook
-import { auth } from '../lib/firebase'; // Your Firebase Config
+// Change line 11 to include RecaptchaVerifier and signInWithPhoneNumber explicitly
+import { auth } from '../lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'; // Statically imported
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -37,29 +39,41 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const [error, setError] = useState("");
 
   // --- FIREBASE OTP FUNCTIONS ---
+  // --- CLEANED UP FIREBASE OTP FUNCTIONS ---
   const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
-      const { RecaptchaVerifier } = require("firebase/auth");
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => console.log("Recaptcha verified")
-      });
+    // 1. Force clear any old verifier pointing to destroyed/unmounted modal inputs
+    if ((window as any).recaptchaVerifier) {
+      try {
+        (window as any).recaptchaVerifier.clear();
+      } catch (e) {
+        console.log("Resetting verifier footprint.");
+      }
+      (window as any).recaptchaVerifier = null;
     }
+
+    // 2. Initialize a fresh verifier bound to the current visible DOM node
+    const { RecaptchaVerifier } = require("firebase/auth");
+    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => console.log("Recaptcha verified")
+    });
   };
 
   const sendOTP = async () => {
     setError("");
+    // ADD THIS TEMPORARY SANITY CHECK LOG:
+    console.log("Vault API Key Check:", auth.config.apiKey);
     try {
       setupRecaptcha();
-      const { signInWithPhoneNumber } = require("firebase/auth");
       const appVerifier = (window as any).recaptchaVerifier;
-      // Prepending +91 for the India market as per your preference
+
+      // Removed the dynamic inner require statements completely
       const result = await signInWithPhoneNumber(auth, `+91${phone}`, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
     } catch (err: any) {
-      console.error(err);
-      setError("Failed to send code. Please check the number.");
+      console.error("Error payload traced:", err);
+      setError("Failed to send code. Network endpoint rejected initialization.");
     }
   };
 
@@ -108,7 +122,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
         {/* --- REPLACED CLERK WITH FIREBASE AUTH UI --- */}
         <div className="flex items-center gap-4 md:gap-6">
           {!user ? (
-            <button 
+            <button
               onClick={() => setShowLogin(true)}
               className="text-[10px] font-black uppercase border-2 border-white px-5 py-2 hover:bg-[#fbea27] hover:text-black hover:border-[#fbea27] transition-all"
             >
@@ -137,18 +151,18 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
       {/* 3. Sub-Nav Navigation */}
       <div className="bg-[#232f3e] border-t border-white/5 overflow-x-auto no-scrollbar">
         <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-center gap-8 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-          <div 
-            className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" 
-            onMouseEnter={() => setActiveMenu('screen')} 
+          <div
+            className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2"
+            onMouseEnter={() => setActiveMenu('screen')}
             onMouseLeave={() => setActiveMenu(null)}
           >
             Screen Protection <ChevronDown size={12} />
           </div>
           <Link href="/category/camera-guard" className="hover:text-[#fbea27] transition-colors">Camera Guard</Link>
           <Link href="/category/back-screenguard" className="hover:text-[#fbea27] transition-colors">Back ScreenGuard</Link>
-          <div 
-            className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2" 
-            onMouseEnter={() => setActiveMenu('device')} 
+          <div
+            className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2"
+            onMouseEnter={() => setActiveMenu('device')}
             onMouseLeave={() => setActiveMenu(null)}
           >
             Shop By Device <ChevronDown size={12} />
@@ -167,45 +181,45 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
             className="fixed top-[104px] left-0 w-full bg-white shadow-2xl border-b-4 border-black z-[99]"
           >
             <div className="max-w-7xl mx-auto p-10 grid grid-cols-3 gap-12 text-black">
-               {activeMenu === 'screen' ? (
-                 <>
-                   <div className="flex flex-col gap-4">
-                     <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Device</h4>
-                     <ul className="flex flex-col gap-2">
-                       {['Mobile', 'Tablet', 'Smartwatch'].map(item => (
-                         <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                       ))}
-                     </ul>
-                   </div>
-                   <div className="flex flex-col gap-4">
-                     <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Type</h4>
-                     <ul className="flex flex-col gap-2">
-                       {['Normal', 'UV Glass', 'Edge to Edge'].map(item => (
-                         <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                       ))}
-                     </ul>
-                   </div>
-                   <div className="flex flex-col gap-4">
-                     <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Category</h4>
-                     <ul className="flex flex-col gap-2">
-                       {['Clear', 'Matte Finish', 'Privacy Shield'].map(item => (
-                         <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                       ))}
-                     </ul>
-                   </div>
-                 </>
-               ) : (
-                 DEVICE_BRANDS.map(brandGroup => (
-                   <div key={brandGroup.brand} className="flex flex-col gap-4">
-                     <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{brandGroup.brand}</h4>
-                     <ul className="flex flex-col gap-2">
-                       {brandGroup.models.map(model => (
-                         <li key={model} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{model}</li>
-                       ))}
-                     </ul>
-                   </div>
-                 ))
-               )}
+              {activeMenu === 'screen' ? (
+                <>
+                  <div className="flex flex-col gap-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Device</h4>
+                    <ul className="flex flex-col gap-2">
+                      {['Mobile', 'Tablet', 'Smartwatch'].map(item => (
+                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Type</h4>
+                    <ul className="flex flex-col gap-2">
+                      {['Normal', 'UV Glass', 'Edge to Edge'].map(item => (
+                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Category</h4>
+                    <ul className="flex flex-col gap-2">
+                      {['Clear', 'Matte Finish', 'Privacy Shield'].map(item => (
+                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                DEVICE_BRANDS.map(brandGroup => (
+                  <div key={brandGroup.brand} className="flex flex-col gap-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{brandGroup.brand}</h4>
+                    <ul className="flex flex-col gap-2">
+                      {brandGroup.models.map(model => (
+                        <li key={model} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{model}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
             </div>
           </motion.div>
         )}
@@ -217,9 +231,12 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLogin(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="relative w-full max-w-sm bg-white border-4 border-black p-10 shadow-[12px_12px_0px_0px_rgba(251,234,39,1)]">
-              <button onClick={() => setShowLogin(false)} className="absolute top-4 right-4 text-black hover:rotate-90 transition-all"><X size={24}/></button>
+              <button onClick={() => setShowLogin(false)} className="absolute top-4 right-4 text-black hover:rotate-90 transition-all"><X size={24} /></button>
               <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-2 text-black">Citizen <span className="text-[#fbea27] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Entry</span></h2>
               <p className="text-[10px] font-bold text-zinc-400 uppercase mb-8">Access the display protection vault</p>
+
+              {/* MOVED HERE: Always mounted safely as long as the modal is visible */}
+              <div id="recaptcha-container"></div>
 
               {step === 'phone' ? (
                 <div className="space-y-6">
@@ -227,15 +244,29 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-black border-r border-black/10 pr-3">+91</span>
                     <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border-2 border-black p-4 pl-16 font-bold outline-none focus:bg-zinc-50 text-black" />
                   </div>
-                  <div id="recaptcha-container"></div> {/* Firebase Required Hidden Container */}
+                  {/* REMOVED FROM HERE */}
                   {error && <p className="text-red-500 text-[10px] font-black uppercase">{error}</p>}
-                  <button onClick={sendOTP} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black">Send Verification Code</button>
+                  <button
+                    type="button" // Force button isolation behavior
+                    onClick={sendOTP}
+                    style={{ backgroundColor: BRAND_YELLOW }}
+                    className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black"
+                  >
+                    Send Verification Code
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-6">
                   <input type="text" placeholder="6-Digit Code" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full border-2 border-black p-4 font-bold outline-none text-center text-2xl tracking-[0.5em] text-black" />
                   {error && <p className="text-red-500 text-[10px] font-black uppercase">{error}</p>}
-                  <button onClick={verifyOTP} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black">Verify & Enter</button>
+                  <button
+                    type="button" // Force button isolation behavior
+                    onClick={verifyOTP}
+                    style={{ backgroundColor: BRAND_YELLOW }}
+                    className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black"
+                  >
+                    Verify & Enter
+                  </button>
                   <button onClick={() => setStep('phone')} className="w-full text-[10px] font-black uppercase text-zinc-400 hover:text-black">Edit Number</button>
                 </div>
               )}
