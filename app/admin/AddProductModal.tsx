@@ -21,6 +21,7 @@ export default function AddProductModal() {
         subCategory: "",     // Normal, UV, Membrane
         tag: "",
         price: "",           // Base price for grid display
+        compareAtPrice: "", // Add this property
         images: [] as string[]
     });
 
@@ -65,6 +66,7 @@ export default function AddProductModal() {
             types: typesArray, 
             tag: formData.tag,
             price: Number(formData.price), // Main display price
+            compareAtPrice: formData.compareAtPrice ? Number(formData.compareAtPrice) : undefined, // Add this line
             images: formData.images,
         };
 
@@ -74,7 +76,7 @@ export default function AddProductModal() {
             setIsOpen(false);
             setFormData({
                 id: "", name: "", description: "", brand: "", model: "",
-                category: "", deviceType: "", subCategory: "", tag: "", price: "", images: []
+                category: "", deviceType: "", subCategory: "", tag: "", price: "", compareAtPrice: "", images: []
             });
             setSelectedTypes({ Clear: "", Matte: "", Privacy: "" });
             window.location.reload();
@@ -108,6 +110,15 @@ export default function AddProductModal() {
                         <option value="Camera Guard">Camera Guard</option>
                         <option value="Back Screen Guard">Back Screen Guard</option>
                     </select>
+
+                    <input 
+                        placeholder="Device Brand (e.g. Apple, Samsung)" 
+                        type="text" 
+                        className="border-2 border-black p-2 font-bold outline-none" 
+                        value={formData.brand}
+                        onChange={e => setFormData({ ...formData, brand: e.target.value })} 
+                        required 
+                    />
 
                     {/* DYNAMIC TEMPERED GLASS WORKFLOW */}
                     {formData.category === "Tempered Glass" && (
@@ -158,6 +169,7 @@ export default function AddProductModal() {
                     <div className="col-span-2 mt-4"><p className="font-black uppercase text-xs mb-2">Pricing & Tags</p></div>
 
                     <input placeholder="Main Display Price" type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, price: e.target.value })} required />
+                    <input placeholder="Original Compare Price (Strike-through)" type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, compareAtPrice: e.target.value })} />
                     
                     <select className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, tag: e.target.value })}>
                         <option value="">Select Tag</option>

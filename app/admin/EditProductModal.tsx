@@ -16,6 +16,7 @@ type EditProductFormData = {
     subCategory: string;
     tag: string;
     price: string;
+    compareAtPrice: string; // Add this line
     images: string[];
 };
 
@@ -35,6 +36,7 @@ export default function EditProductModal({ product }: { product: any }) {
         subCategory: product.subCategory || "",
         tag: product.tag || "",
         price: product.price?.toString() || "",
+        compareAtPrice: product.compareAtPrice?.toString() || "",
         images: (product.images as string[]) || []
     });
 
@@ -81,9 +83,10 @@ export default function EditProductModal({ product }: { product: any }) {
             category: formData.category,
             deviceType: formData.deviceType,
             subCategory: formData.subCategory,
-            types: typesArray, 
+            types: typesArray,
             tag: formData.tag,
             price: Number(formData.price),
+            compareAtPrice: formData.compareAtPrice ? Number(formData.compareAtPrice) : undefined, // Add this line
             images: formData.images,
         };
 
@@ -120,7 +123,7 @@ export default function EditProductModal({ product }: { product: any }) {
                         <label className="text-[10px] font-black uppercase text-zinc-400">ID (Locked)</label>
                         <input value={formData.id} type="number" className="border-2 border-black p-2 font-bold outline-none bg-zinc-100 opacity-60 cursor-not-allowed" readOnly />
                     </div>
-                    
+
                     <div className="col-span-2 flex flex-col gap-1">
                         <label className="text-[10px] font-black uppercase text-zinc-400">Description</label>
                         <textarea value={formData.description} className="border-2 border-black p-2 font-bold outline-none h-24" onChange={e => setFormData({ ...formData, description: e.target.value })} required />
@@ -169,16 +172,16 @@ export default function EditProductModal({ product }: { product: any }) {
                                 <div className="space-y-3">
                                     {["Clear", "Matte", "Privacy"].map((type) => (
                                         <div key={type} className="flex items-center gap-4">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={selectedTypes[type] !== undefined} 
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTypes[type] !== undefined}
                                                 onChange={() => handleTypeToggle(type)}
                                                 className="w-5 h-5 accent-black"
                                             />
                                             <span className="font-bold text-sm w-20">{type}</span>
                                             {selectedTypes[type] !== undefined && (
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     placeholder={`Price for ${type}`}
                                                     className="flex-1 border-2 border-black p-1 text-sm font-bold outline-none bg-white text-black"
                                                     value={selectedTypes[type] || ""}
@@ -199,7 +202,12 @@ export default function EditProductModal({ product }: { product: any }) {
                         <label className="text-[10px] font-black uppercase text-zinc-400">Base Grid Price</label>
                         <input value={formData.price} type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, price: e.target.value })} required />
                     </div>
-                    
+
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Original Compare Price (Strike-through)</label>
+                        <input value={formData.compareAtPrice} type="number" className="border-2 border-black p-2 font-bold outline-none" onChange={e => setFormData({ ...formData, compareAtPrice: e.target.value })} />
+                    </div>
+
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-black uppercase text-zinc-400">System Tag</label>
                         <select value={formData.tag} className="border-2 border-black p-2 font-bold outline-none h-[42px]" onChange={e => setFormData({ ...formData, tag: e.target.value })}>

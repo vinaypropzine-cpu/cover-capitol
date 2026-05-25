@@ -7,6 +7,9 @@ const ProductSchema = new Schema({
   // This remains the 'base' or 'starting' price for the product grid
   price: { type: Number, required: true }, 
   
+  // ADD THIS LINE: Stores the higher original cross-out price
+  compareAtPrice: { type: Number },
+  
   images: [String],
   category: String,
   brand: String,
