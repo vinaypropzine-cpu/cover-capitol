@@ -14,6 +14,8 @@ import Link from 'next/link';
 
 // Reusable Navbar component
 import Navbar from '@/app/components/Navbar'; 
+// 1. Add this import at the very top of app/page.tsx
+import Footer from '@/app/components/Footer';
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -361,6 +363,8 @@ export default function ProductDetail() {
           </section>
         )}
       </main>
+      {/* REUSABLE FOOTER ENGINES */}
+      <Footer />
     </div>
   );
 }

@@ -11,6 +11,8 @@ import { getProducts } from '@/app/lib/actions';
 
 // 1. Import your new reusable Navbar
 import Navbar from '@/app/components/Navbar';
+// 1. Add this import at the very top of app/page.tsx
+import Footer from '@/app/components/Footer';
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -282,9 +284,8 @@ export default function CategoryListingPage({
         </main>
       </div>
 
-      <footer className="bg-[#131921] text-white py-10 mt-20 text-center border-t border-white/10">
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">© 2026 Cover Capitol. All Rights Reserved.</p>
-      </footer>
+      {/* REUSABLE FOOTER ENGINES */}
+      <Footer />
     </div>
   );
 }

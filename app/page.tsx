@@ -15,6 +15,8 @@ import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
 import Navbar from '@/app/components/Navbar';
+// 1. Add this import at the very top of app/page.tsx
+import Footer from '@/app/components/Footer';
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
@@ -588,38 +590,8 @@ export default function EcommerceSite() {
         )}
       </main>
 
-      <footer className="bg-[#131921] text-white py-20 border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12 text-white">
-          <div>
-            <h2 className="text-xl font-black italic mb-6">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h2>
-            <p className="text-gray-400 text-sm leading-relaxed">India's leading brand for high-conversion protection tech.</p>
-          </div>
-          <div>
-            <h4 className="font-bold mb-6 text-[#fbea27] uppercase text-xs tracking-widest">Shop</h4>
-            <ul className="text-sm text-gray-400 space-y-3">
-              <li>iPhone Glass</li>
-              <li>Samsung Glass</li>
-              <li>Privacy Shields</li>
-            </ul>
-          </div>
-          <div className="bg-[#232f3e] p-8 rounded-2xl">
-            <h4 className="font-bold mb-4">Join the Capitol</h4>
-            <div className="flex bg-white rounded-lg p-1 overflow-hidden">
-              <input 
-                type="text" 
-                placeholder="Email" 
-                className="flex-1 px-4 text-black text-xs outline-none" 
-              />
-              <button 
-                style={{ backgroundColor: BRAND_YELLOW }} 
-                className="px-6 py-2 rounded-md text-black font-bold text-xs"
-              >
-                GO
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* REUSABLE FOOTER ENGINES */}
+      <Footer />
 
       <style jsx global>{`
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
