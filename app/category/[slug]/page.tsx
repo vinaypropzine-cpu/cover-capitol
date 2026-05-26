@@ -129,6 +129,8 @@ export default function CategoryListingPage({
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       {/* Cart Drawer (Keeping here for local control, or move to layout.tsx later) */}
+      {/* Cart Drawer (Synchronized with Product Page) */}
+      {/* Cart Drawer (Synchronized with Product Page) */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -136,26 +138,39 @@ export default function CategoryListingPage({
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-[201] shadow-2xl flex flex-col">
               <div className="p-6 border-b flex justify-between items-center bg-[#131921] text-white">
                 <h2 className="text-lg font-bold">Shopping Cart ({totalItems()})</h2>
-                <button onClick={toggleCart} className="p-2 hover:bg-white/10 rounded-full"><X size={20} /></button>
+                <button onClick={toggleCart} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
               </div>
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {items.length === 0 ? (
-                  <div className="text-center py-20"><ShoppingBag size={48} className="mx-auto text-gray-200 mb-4" /><p className="font-bold uppercase text-zinc-400">Cart is empty.</p></div>
+                  <div className="text-center py-20">
+                    <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 font-medium">Your cart is empty.</p>
+                  </div>
                 ) : (
                   items.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 border-2 border-black/5 mb-4 shadow-sm">
-                      <img src={item.images[0]} className="w-16 h-16 object-cover" alt={item.name} />
+                    <div key={item.id} className="flex gap-4 p-4 bg-white border rounded-lg shadow-sm text-black">
+                      <img src={item.images[0]} className="w-20 h-20 object-cover rounded-md" alt={item.name} />
                       <div className="flex-1">
-                        <h4 className="font-black uppercase text-[10px] leading-tight">{item.name}</h4>
-                        <p className="text-red-600 font-black text-sm">₹{item.price}</p>
+                        <h4 className="font-bold text-sm">{item.name}</h4>
+                        <p className="text-red-600 font-black text-sm mt-1">₹{item.price}</p>
+                        {/* QTY LABEL ADDED HERE */}
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                      <button onClick={() => removeFromCart(item.id)} className="text-zinc-400 hover:text-red-500 p-2 transition-colors"><Trash2 size={18} /></button>
                     </div>
                   ))
                 )}
               </div>
               <div className="p-6 border-t bg-gray-50">
-                <button onClick={handlePayment} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(251,234,39,1)] :translate-y-[-2px] active:translate-y-0 transition-all">Proceed to Checkout</button>
+                {/* SUBTOTAL ROW ADDED HERE */}
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold uppercase text-[10px] tracking-widest text-zinc-400">Subtotal:</span>
+                  <span className="text-xl font-black text-black">
+                    ₹{items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
+                  </span>
+                </div>
+                {/* STYLING & TEXT SYNCED FOR THE BUTTON */}
+                <button onClick={handlePayment} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-0 transition-all text-black">Proceed to Buy</button>
               </div>
             </motion.div>
           </>
