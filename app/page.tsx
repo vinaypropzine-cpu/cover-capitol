@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
 // 1. IMPORT YOUR LIVE ACTION
-import { getProducts } from './lib/actions';
+// 1. Update your actions import
+import { getProducts, getBanners } from './lib/actions';
 // REPLACED CLERK WITH FIREBASE AUTH
 import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -79,6 +80,15 @@ const TABS_DATA = {
 export default function EcommerceSite() {
   const [mounted, setMounted] = React.useState(false);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
+  
+  // --- NEW STATES FOR HERO BANNERS ---
+  const [dbBanners, setDbBanners] = useState<any[]>([]);
+  const [heroEmblaRef, heroEmblaApi] = useEmblaCarousel(
+    { loop: true },
+    [Autoplay({ delay: 5000, stopOnInteraction: false })]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   // CONNECTED TO FIREBASE AUTH
   const { user } = useAuth();
 
@@ -87,9 +97,20 @@ export default function EcommerceSite() {
     const fetchFromAtlas = async () => {
       const data = await getProducts();
       setLiveProducts(data);
+      // Fetch dynamic banners from MongoDB
+      const fetchedBanners = await getBanners();
+      setDbBanners(fetchedBanners);
     };
     fetchFromAtlas();
   }, []);
+
+  // --- EMBLA DOT NAVIGATION TRACKER ---
+  useEffect(() => {
+    if (!heroEmblaApi) return;
+    const onSelect = () => setSelectedIndex(heroEmblaApi.selectedScrollSnap());
+    heroEmblaApi.on('select', onSelect);
+    onSelect();
+  }, [heroEmblaApi]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
@@ -275,29 +296,50 @@ export default function EcommerceSite() {
         ) : (
           /* --- NORMAL HOME PAGE VIEW --- */
           <>
-            <section className="relative h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
-              <div className="flex-1 flex items-center max-w-7xl mx-auto px-6 w-full">
-                <div className="grid lg:grid-cols-2 gap-12 items-center w-full">
-                  <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
-                    <span className="text-xs font-black uppercase tracking-widest text-orange-600 mb-4 block">New Launch 2026</span>
-                    <h2 className="text-5xl lg:text-8xl font-black leading-none mb-6 text-black">UNBREAKABLE <br /> DISPLAY <span style={{ color: BRAND_YELLOW, WebkitTextStroke: '2px black' }}>STYLE.</span></h2>
-                    <p className="text-gray-600 text-lg max-w-md mb-8 leading-relaxed font-medium">Join 50k+ customers using India's #1 Diamond-Grade Protection Glass.</p>
-                    <div className="flex gap-4">
-                      <button className="bg-black text-white px-8 py-4 rounded-lg font-bold text-sm hover:brightness-125 transition-all shadow-lg">Shop iPhone 15 Glass</button>
-                      <button className="bg-white border-2 border-black px-8 py-4 rounded-lg font-bold text-sm hover:bg-gray-50 transition-all text-black">All Models</button>
-                    </div>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="relative flex justify-center">
-                    <div style={{ backgroundColor: BRAND_YELLOW }} className="absolute inset-0 rounded-full blur-[120px] opacity-20" />
-                    <div className="relative bg-gradient-to-tr from-gray-100 to-white p-8 rounded-[3rem] border shadow-2xl overflow-hidden group">
-                      <img src="https://images.unsplash.com/photo-1556656793-062ff987b50d?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover rounded-[2rem] group-hover:scale-105 transition-transform duration-1000" />
-                    </div>
-                  </motion.div>
+            <section className="relative w-full h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+              {/* 1. EMBLA CAROUSEL (Takes all remaining vertical space) */}
+              <div className="flex-1 overflow-hidden relative bg-zinc-100" ref={heroEmblaRef}>
+                <div className="flex h-full">
+                  {dbBanners.length > 0 ? (
+                    dbBanners.map((banner, idx) => (
+                      <div key={banner._id || idx} className="relative flex-[0_0_100%] h-full">
+                        <img 
+                          src={banner.imageUrl} 
+                          className="w-full h-full object-cover" 
+                          alt={`Hero Slide ${idx + 1}`} 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                      </div>
+                    ))
+                  ) : (
+                     <div className="relative flex-[0_0_100%] h-full flex flex-col items-center justify-center">
+                       <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
+                       <h2 className="text-xl font-black uppercase tracking-widest text-zinc-400">Loading Vault...</h2>
+                     </div>
+                  )}
                 </div>
+
+                {/* DOT NAVIGATION */}
+                {dbBanners.length > 1 && (
+                  <div className="absolute bottom-6 left-0 w-full flex justify-center gap-3 z-10">
+                    {dbBanners.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => heroEmblaApi?.scrollTo(idx)}
+                        className={`w-3 h-3 rounded-full border-2 border-white transition-all duration-300 ${
+                          selectedIndex === idx ? 'bg-white scale-125' : 'bg-transparent hover:bg-white/50'
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ backgroundColor: BRAND_YELLOW }} className="w-full h-14 flex items-center overflow-hidden border-t border-black/5 shrink-0">
+
+              {/* 2. THE ANCHORED TICKER TAPE (Preserved perfectly) */}
+              <div style={{ backgroundColor: BRAND_YELLOW }} className="w-full h-14 flex items-center overflow-hidden border-t border-black/5 shrink-0 z-10 relative shadow-[0px_-4px_15px_rgba(0,0,0,0.15)]">
                 <div className="flex whitespace-nowrap animate-ticker">
-                  {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, idx) => (
+                  {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 px-10 text-black font-black text-[10px] uppercase tracking-widest">{item.icon} {item.text}</div>
                   ))}
                 </div>

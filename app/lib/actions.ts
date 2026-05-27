@@ -3,6 +3,8 @@
 import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
 import { revalidatePath } from "next/cache";
+import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
+
 
 /**
  * READ: Fetches all products for the inventory table.
@@ -53,6 +55,56 @@ export async function deleteProduct(productId: string | number) {
     return { success: true };
   } catch (error) {
     console.error("Vault Deletion Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// HERO BANNER ACTIONS
+// ==========================================
+
+/**
+ * READ: Fetches all active banners for the frontend slider
+ */
+export async function getBanners() {
+  await connectDB();
+  const banners = await HeroBanner.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+  return JSON.parse(JSON.stringify(banners));
+}
+
+/**
+ * CREATE: Saves a new UploadThing banner URL directly to the database
+ */
+export async function addBanner(imageUrl: string) {
+  try {
+    await connectDB();
+    await HeroBanner.create({ imageUrl, isActive: true });
+    
+    // Refresh the home page and admin panel to show the new slide instantly
+    revalidatePath("/admin");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Banner Save Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Removes a banner from the database
+ */
+export async function deleteBanner(bannerId: string) {
+  try {
+    await connectDB();
+    await HeroBanner.findByIdAndDelete(bannerId);
+    
+    revalidatePath("/admin");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Banner Deletion Error:", error);
     return { success: false };
   }
 }
