@@ -1,6 +1,6 @@
 "use server";
 // app/admin/page.tsx
-import { getProducts, getBanners } from "../lib/actions"; // 1. IMPORT getBanners
+import { getProducts, getBanners, getAnnouncement } from "../lib/actions"; // 1. IMPORT getBanners
 import DeleteButton from "./DeleteButton"; // Import the new button
 import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
@@ -9,13 +9,19 @@ import AddProductModal from "./AddProductModal";
 // 1. Add this import at the top of app/admin/page.tsx
 import EditProductModal from "./EditProductModal";
 import HeroBannerManager from "./HeroBannerManager"; // 2. IMPORT THE NEW MANAGER
+import AnnouncementManager from "./AnnouncementManager"; // Add this import
+
+
 
 export default async function AdminDashboard() {
     const products = await getProducts();
     const banners = await getBanners(); // 3. FETCH THE BANNERS
+    const announcement = await getAnnouncement(); // Add this line
 
     return (
         <div className="p-4 bg-white min-h-screen text-black font-sans">
+            {/* Add the Promo Bar Manager here */}
+            <AnnouncementManager initialData={announcement} />
             {/* 4. RENDER THE HERO BILLBOARD MANAGER RIGHT AT THE TOP */}
             <HeroBannerManager banners={banners} />
             <div className="flex justify-between items-center mb-6">

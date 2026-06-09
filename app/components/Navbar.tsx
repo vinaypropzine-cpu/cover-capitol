@@ -7,10 +7,10 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../useCartStore';
-import { useAuth } from '../context/AuthContext'; // Custom Firebase Hook
-// Change line 11 to include RecaptchaVerifier and signInWithPhoneNumber explicitly
+import { useAuth } from '../context/AuthContext'; 
 import { auth } from '../lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'; // Statically imported
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'; 
+import { getAnnouncement } from '../lib/actions'; // Import the backend action
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -28,7 +28,21 @@ interface NavbarProps {
 export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const { items, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
-  const { user, logout } = useAuth(); // Replaces Clerk auth state
+  const { user, logout } = useAuth(); 
+
+  // --- DYNAMIC ANNOUNCEMENT STATE ---
+  const [promo, setPromo] = useState({ 
+    text: "FREE EXPRESS DELIVERY ON ALL ORDERS ABOVE ₹499", 
+    isActive: true 
+  });
+
+  useEffect(() => {
+    const fetchPromo = async () => {
+      const data = await getAnnouncement();
+      if (data) setPromo(data);
+    };
+    fetchPromo();
+  }, []);
 
   // --- OTP LOGIN STATES ---
   const [showLogin, setShowLogin] = useState(false);
@@ -38,10 +52,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [error, setError] = useState("");
 
-  // --- FIREBASE OTP FUNCTIONS ---
-  // --- CLEANED UP FIREBASE OTP FUNCTIONS ---
   const setupRecaptcha = () => {
-    // 1. Force clear any old verifier pointing to destroyed/unmounted modal inputs
     if ((window as any).recaptchaVerifier) {
       try {
         (window as any).recaptchaVerifier.clear();
@@ -50,8 +61,6 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
       }
       (window as any).recaptchaVerifier = null;
     }
-
-    // 2. Initialize a fresh verifier bound to the current visible DOM node
     const { RecaptchaVerifier } = require("firebase/auth");
     (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       size: 'invisible',
@@ -61,13 +70,10 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
 
   const sendOTP = async () => {
     setError("");
-    // ADD THIS TEMPORARY SANITY CHECK LOG:
     console.log("Vault API Key Check:", auth.config.apiKey);
     try {
       setupRecaptcha();
       const appVerifier = (window as any).recaptchaVerifier;
-
-      // Removed the dynamic inner require statements completely
       const result = await signInWithPhoneNumber(auth, `+91${phone}`, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
@@ -92,12 +98,14 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
 
   return (
     <header className="fixed top-0 w-full z-[100] bg-[#131921] text-white">
-      {/* 1. Announcement Bar */}
-      <div style={{ backgroundColor: BRAND_YELLOW }} className="py-2 text-center border-b border-black">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center justify-center gap-2">
-          <ShieldCheck size={14} /> FREE EXPRESS DELIVERY ON ALL ORDERS ABOVE ₹499 <Zap size={14} fill="black" />
-        </p>
-      </div>
+      {/* 1. DYNAMIC Announcement Bar */}
+      {promo.isActive && (
+        <div style={{ backgroundColor: BRAND_YELLOW }} className="py-2 text-center border-b border-black">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center justify-center gap-2">
+            <ShieldCheck size={14} /> {promo.text} <Zap size={14} fill="black" />
+          </p>
+        </div>
+      )}
 
       {/* 2. Main Header Row */}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
@@ -105,7 +113,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           <h1 className="text-xl font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
         </Link>
 
-        {/* Search Bar connected to Global State */}
+        {/* Search Bar */}
         <div className="flex-1 flex h-10 overflow-hidden rounded-md group border-2 border-transparent focus-within:border-[#fbea27] transition-all">
           <input
             type="text"
@@ -119,7 +127,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           </button>
         </div>
 
-        {/* --- REPLACED CLERK WITH FIREBASE AUTH UI --- */}
+        {/* Auth & Cart */}
         <div className="flex items-center gap-4 md:gap-6">
           {!user ? (
             <button
@@ -225,7 +233,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
         )}
       </AnimatePresence>
 
-      {/* --- OTP LOGIN MODAL (BRUTALIST THEME) --- */}
+      {/* --- OTP LOGIN MODAL --- */}
       <AnimatePresence>
         {showLogin && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6">
@@ -235,7 +243,6 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
               <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-2 text-black">Citizen <span className="text-[#fbea27] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Entry</span></h2>
               <p className="text-[10px] font-bold text-zinc-400 uppercase mb-8">Access the display protection vault</p>
 
-              {/* MOVED HERE: Always mounted safely as long as the modal is visible */}
               <div id="recaptcha-container"></div>
 
               {step === 'phone' ? (
@@ -244,10 +251,9 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-black border-r border-black/10 pr-3">+91</span>
                     <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border-2 border-black p-4 pl-16 font-bold outline-none focus:bg-zinc-50 text-black" />
                   </div>
-                  {/* REMOVED FROM HERE */}
                   {error && <p className="text-red-500 text-[10px] font-black uppercase">{error}</p>}
                   <button
-                    type="button" // Force button isolation behavior
+                    type="button" 
                     onClick={sendOTP}
                     style={{ backgroundColor: BRAND_YELLOW }}
                     className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black"
@@ -260,7 +266,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                   <input type="text" placeholder="6-Digit Code" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full border-2 border-black p-4 font-bold outline-none text-center text-2xl tracking-[0.5em] text-black" />
                   {error && <p className="text-red-500 text-[10px] font-black uppercase">{error}</p>}
                   <button
-                    type="button" // Force button isolation behavior
+                    type="button" 
                     onClick={verifyOTP}
                     style={{ backgroundColor: BRAND_YELLOW }}
                     className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black"

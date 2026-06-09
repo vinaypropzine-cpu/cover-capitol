@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
 import { revalidatePath } from "next/cache";
 import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
+import Announcement from "@/models/announcement";
 
 
 /**
@@ -105,6 +106,56 @@ export async function deleteBanner(bannerId: string) {
     return { success: true };
   } catch (error) {
     console.error("Banner Deletion Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// ANNOUNCEMENT BAR ACTIONS
+// ==========================================
+
+/**
+ * READ: Fetches the current announcement bar settings.
+ * If none exists, it creates a default one automatically.
+ */
+export async function getAnnouncement() {
+  await connectDB();
+  let announcement = await Announcement.findOne().lean();
+  
+  if (!announcement) {
+    const defaultDoc = await Announcement.create({ 
+      text: "FREE EXPRESS DELIVERY ON ALL ORDERS ABOVE ₹499", 
+      isActive: true 
+    });
+    return JSON.parse(JSON.stringify(defaultDoc));
+  }
+  
+  return JSON.parse(JSON.stringify(announcement));
+}
+
+/**
+ * UPDATE: Changes the announcement text and visibility status.
+ */
+export async function updateAnnouncement(text: string, isActive: boolean) {
+  try {
+    await connectDB();
+    let announcement = await Announcement.findOne();
+    
+    if (announcement) {
+      announcement.text = text;
+      announcement.isActive = isActive;
+      await announcement.save();
+    } else {
+      await Announcement.create({ text, isActive });
+    }
+    
+    // Refresh the frontend to instantly show the new text
+    revalidatePath("/");
+    revalidatePath("/admin");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Announcement Update Error:", error);
     return { success: false };
   }
 }
