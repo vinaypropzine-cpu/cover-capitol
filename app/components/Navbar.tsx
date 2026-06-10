@@ -10,15 +10,9 @@ import { useCartStore } from '../useCartStore';
 import { useAuth } from '../context/AuthContext'; 
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'; 
-import { getAnnouncement } from '../lib/actions'; // Import the backend action
+import { getAnnouncement, getDeviceBrands } from '../lib/actions'; // Import the backend actions
 
 const BRAND_YELLOW = '#fbea27';
-
-const DEVICE_BRANDS = [
-  { brand: 'Apple', models: ['iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 16'] },
-  { brand: 'Samsung', models: ['Galaxy S24', 'S23 Ultra', 'Z Fold'] },
-  { brand: 'Google', models: ['Pixel 8 Pro', 'Pixel 7a', 'Pixel 6'] },
-];
 
 interface NavbarProps {
   searchQuery: string;
@@ -30,18 +24,22 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const { items, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
   const { user, logout } = useAuth(); 
 
-  // --- DYNAMIC ANNOUNCEMENT STATE ---
+  // --- DYNAMIC ANNOUNCEMENT & DEVICE STATES ---
   const [promo, setPromo] = useState({ 
     text: "FREE EXPRESS DELIVERY ON ALL ORDERS ABOVE ₹499", 
     isActive: true 
   });
+  const [dbDevices, setDbDevices] = useState<any[]>([]); // New state for devices
 
   useEffect(() => {
-    const fetchPromo = async () => {
-      const data = await getAnnouncement();
-      if (data) setPromo(data);
+    const fetchNavbarData = async () => {
+      const promoData = await getAnnouncement();
+      if (promoData) setPromo(promoData);
+
+      const deviceData = await getDeviceBrands();
+      if (deviceData) setDbDevices(deviceData);
     };
-    fetchPromo();
+    fetchNavbarData();
   }, []);
 
   // --- OTP LOGIN STATES ---
@@ -217,11 +215,12 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                   </div>
                 </>
               ) : (
-                DEVICE_BRANDS.map(brandGroup => (
+                /* DYNAMIC DATABASE RENDER */
+                dbDevices.map(brandGroup => (
                   <div key={brandGroup.brand} className="flex flex-col gap-4">
                     <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{brandGroup.brand}</h4>
                     <ul className="flex flex-col gap-2">
-                      {brandGroup.models.map(model => (
+                      {brandGroup.models.map((model: string) => (
                         <li key={model} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{model}</li>
                       ))}
                     </ul>

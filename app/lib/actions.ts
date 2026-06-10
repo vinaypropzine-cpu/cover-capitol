@@ -5,6 +5,7 @@ import Product from "@/models/product";
 import { revalidatePath } from "next/cache";
 import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
 import Announcement from "@/models/announcement";
+import DeviceBrand from "@/models/deviceBrand";
 
 
 /**
@@ -156,6 +157,94 @@ export async function updateAnnouncement(text: string, isActive: boolean) {
     return { success: true };
   } catch (error) {
     console.error("Announcement Update Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// DEVICE MENU ACTIONS
+// ==========================================
+
+/**
+ * READ: Fetches all device brands. Injects default data if the database is completely empty.
+ */
+export async function getDeviceBrands() {
+  await connectDB();
+  let brands = await DeviceBrand.find().lean();
+  
+  if (brands.length === 0) {
+    const defaultBrands = [
+      { brand: 'Apple', models: ['iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 16'] },
+      { brand: 'Samsung', models: ['Galaxy S24', 'S23 Ultra', 'Z Fold'] },
+      { brand: 'Google', models: ['Pixel 8 Pro', 'Pixel 7a', 'Pixel 6'] },
+    ];
+    await DeviceBrand.insertMany(defaultBrands);
+    brands = await DeviceBrand.find().lean();
+  }
+  
+  return JSON.parse(JSON.stringify(brands));
+}
+
+/**
+ * CREATE: Adds a completely new brand (e.g., "Nothing" or "OnePlus").
+ */
+export async function addDeviceBrand(brandName: string) {
+  try {
+    await connectDB();
+    await DeviceBrand.create({ brand: brandName, models: [] });
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Add Brand Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * UPDATE: Adds a new phone model to an existing brand.
+ */
+export async function addModelToBrand(brandId: string, newModel: string) {
+  try {
+    await connectDB();
+    await DeviceBrand.findByIdAndUpdate(brandId, { $push: { models: newModel } });
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Add Model Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Removes a specific phone model from a brand.
+ */
+export async function removeModelFromBrand(brandId: string, modelToRemove: string) {
+  try {
+    await connectDB();
+    await DeviceBrand.findByIdAndUpdate(brandId, { $pull: { models: modelToRemove } });
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Remove Model Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Completely deletes a brand and all its models.
+ */
+export async function deleteDeviceBrand(brandId: string) {
+  try {
+    await connectDB();
+    await DeviceBrand.findByIdAndDelete(brandId);
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Brand Error:", error);
     return { success: false };
   }
 }
