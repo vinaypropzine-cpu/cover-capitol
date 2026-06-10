@@ -10,7 +10,7 @@ import { useCartStore } from '../useCartStore';
 import { useAuth } from '../context/AuthContext'; 
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'; 
-import { getAnnouncement, getDeviceBrands } from '../lib/actions'; // Import the backend actions
+import { getAnnouncement, getDeviceBrands, getScreenMenus } from '../lib/actions'; // Import the backend actions
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -30,6 +30,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
     isActive: true 
   });
   const [dbDevices, setDbDevices] = useState<any[]>([]); // New state for devices
+  const [dbScreenMenus, setDbScreenMenus] = useState<any[]>([]); // New state
 
   useEffect(() => {
     const fetchNavbarData = async () => {
@@ -38,6 +39,9 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
 
       const deviceData = await getDeviceBrands();
       if (deviceData) setDbDevices(deviceData);
+
+      const screenMenuData = await getScreenMenus();
+      if (screenMenuData) setDbScreenMenus(screenMenuData);
     };
     fetchNavbarData();
   }, []);
@@ -189,30 +193,16 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
             <div className="max-w-7xl mx-auto p-10 grid grid-cols-3 gap-12 text-black">
               {activeMenu === 'screen' ? (
                 <>
-                  <div className="flex flex-col gap-4">
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Device</h4>
-                    <ul className="flex flex-col gap-2">
-                      {['Mobile', 'Tablet', 'Smartwatch'].map(item => (
-                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Type</h4>
-                    <ul className="flex flex-col gap-2">
-                      {['Normal', 'UV Glass', 'Edge to Edge'].map(item => (
-                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">Shop By Category</h4>
-                    <ul className="flex flex-col gap-2">
-                      {['Clear', 'Matte Finish', 'Privacy Shield'].map(item => (
-                        <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
+                  {dbScreenMenus.map((menu) => (
+                    <div key={menu._id || menu.title} className="flex flex-col gap-4">
+                      <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{menu.title}</h4>
+                      <ul className="flex flex-col gap-2">
+                        {menu.items.map((item: string) => (
+                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </>
               ) : (
                 /* DYNAMIC DATABASE RENDER */

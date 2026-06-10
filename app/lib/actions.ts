@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
 import Announcement from "@/models/announcement";
 import DeviceBrand from "@/models/deviceBrand";
-
+import ScreenMenu from "@/models/screenMenu";
 
 /**
  * READ: Fetches all products for the inventory table.
@@ -245,6 +245,63 @@ export async function deleteDeviceBrand(brandId: string) {
     return { success: true };
   } catch (error) {
     console.error("Delete Brand Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// SCREEN PROTECTION MENU ACTIONS
+// ==========================================
+
+/**
+ * READ: Fetches the Screen Protection menu columns. 
+ * Injects the default 3-column layout if the database is empty.
+ */
+export async function getScreenMenus() {
+  await connectDB();
+  let menus = await ScreenMenu.find().lean();
+  
+  if (menus.length === 0) {
+    const defaultMenus = [
+      { title: 'Shop By Device', items: ['Mobile', 'Tablet', 'Smartwatch'] },
+      { title: 'Shop By Type', items: ['Normal', 'UV Glass', 'Edge to Edge'] },
+      { title: 'Shop By Category', items: ['Clear', 'Matte Finish', 'Privacy Shield'] },
+    ];
+    await ScreenMenu.insertMany(defaultMenus);
+    menus = await ScreenMenu.find().lean();
+  }
+  
+  return JSON.parse(JSON.stringify(menus));
+}
+
+/**
+ * UPDATE: Adds a new list item (e.g., "Laptops") to a specific menu column.
+ */
+export async function addScreenMenuItem(menuId: string, newItem: string) {
+  try {
+    await connectDB();
+    await ScreenMenu.findByIdAndUpdate(menuId, { $push: { items: newItem } });
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Add Menu Item Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Removes a specific list item from a menu column.
+ */
+export async function removeScreenMenuItem(menuId: string, itemToRemove: string) {
+  try {
+    await connectDB();
+    await ScreenMenu.findByIdAndUpdate(menuId, { $pull: { items: itemToRemove } });
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Remove Menu Item Error:", error);
     return { success: false };
   }
 }
