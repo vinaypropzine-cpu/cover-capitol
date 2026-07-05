@@ -8,10 +8,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '@/app/useCartStore';
 import { getProducts } from '@/app/lib/actions';
-
-// 1. Import your new reusable Navbar
 import Navbar from '@/app/components/Navbar';
-// 1. Add this import at the very top of app/page.tsx
 import Footer from '@/app/components/Footer';
 
 const BRAND_YELLOW = '#fbea27';
@@ -28,14 +25,14 @@ export default function CategoryListingPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  // 2. Add search state required by the Navbar component
   const [searchQuery, setSearchQuery] = useState("");
+  // --- ADDED LOADING STATE ---
+  const [isLoading, setIsLoading] = useState(true);
 
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [categoryName, setCategoryName] = useState<string>('');
 
-  // --- NEW MULTI-SELECT FILTER ARRAYS ---
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [selectedSubCats, setSelectedSubCats] = useState<string[]>([]);
   const [selectedPrices, setSelectedPrices] = useState<number[]>([]);
@@ -45,13 +42,15 @@ export default function CategoryListingPage({
       const resolvedParams = await params;
       const slug = resolvedParams.slug;
       setCategoryName(SLUG_TO_CATEGORY[slug] || slug);
+      
       const products = await getProducts();
       setAllProducts(products || []);
+      // --- TURN OFF LOADING WHEN DATA ARRIVES ---
+      setIsLoading(false);
     };
     loadProducts();
   }, [params]);
 
-  // --- TOGGLE EVENT HANDLERS ---
   const handleDeviceToggle = (device: string) => {
     setSelectedDevices(prev => 
       prev.includes(device) ? prev.filter(d => d !== device) : [...prev, device]
@@ -70,23 +69,13 @@ export default function CategoryListingPage({
     );
   };
 
-  // --- ADVANCED EVALUATION PIPELINE: REPLACED OLD SIMPLE MAP WITH MULTI-FILTER INTERSECTION ---
   const filteredProducts = allProducts.filter((p: any) => {
-    // A. Base Category Filter
     const matchesCategory = p.category?.toLowerCase() === categoryName.toLowerCase();
-
-    // B. Reusable Navbar Input Search Filter
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || searchQuery === "";
-
-    // C. Device Type Filter Array (Mobile, Tablet, Smartwatch) - Case Insensitive
     const matchesDevice = selectedDevices.length === 0 || 
       selectedDevices.some(d => p.deviceType?.toLowerCase() === d.toLowerCase());
-
-    // D. Glass Category/SubCategory Filter Array (Normal, UV, Edge to Edge Membrane) - Case Insensitive
     const matchesSubCat = selectedSubCats.length === 0 || 
       selectedSubCats.some(s => p.subCategory?.toLowerCase() === s.toLowerCase());
-
-    // E. Price Tier Boundaries (Under 499, 399, 299, 199)
     const matchesPrice = selectedPrices.length === 0 || 
       selectedPrices.some(maxPrice => Number(p.price) <= maxPrice);
 
@@ -124,13 +113,8 @@ export default function CategoryListingPage({
 
   return (
     <div className="min-h-screen bg-white text-black font-sans">
-
-      {/* 3. Replaced Announcement Bar, Header, and Nav with the Component */}
       <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-      {/* Cart Drawer (Keeping here for local control, or move to layout.tsx later) */}
-      {/* Cart Drawer (Synchronized with Product Page) */}
-      {/* Cart Drawer (Synchronized with Product Page) */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -153,7 +137,6 @@ export default function CategoryListingPage({
                       <div className="flex-1">
                         <h4 className="font-bold text-sm">{item.name}</h4>
                         <p className="text-red-600 font-black text-sm mt-1">₹{item.price}</p>
-                        {/* QTY LABEL ADDED HERE */}
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>
                       </div>
                       <button onClick={() => removeFromCart(item.id)} className="text-zinc-400 hover:text-red-500 p-2 transition-colors"><Trash2 size={18} /></button>
@@ -162,14 +145,12 @@ export default function CategoryListingPage({
                 )}
               </div>
               <div className="p-6 border-t bg-gray-50">
-                {/* SUBTOTAL ROW ADDED HERE */}
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-bold uppercase text-[10px] tracking-widest text-zinc-400">Subtotal:</span>
                   <span className="text-xl font-black text-black">
                     ₹{items.reduce((acc, item) => acc + (item.price * item.quantity), 0)}
                   </span>
                 </div>
-                {/* STYLING & TEXT SYNCED FOR THE BUTTON */}
                 <button onClick={handlePayment} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-4 font-black uppercase text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-0 transition-all text-black">Proceed to Buy</button>
               </div>
             </motion.div>
@@ -177,8 +158,6 @@ export default function CategoryListingPage({
         )}
       </AnimatePresence>
 
-      {/* --- SIDEBAR LAYOUT --- */}
-      {/* --- UPDATED: Sidebar on Left, Products on Right --- */}
       <div className="max-w-7xl mx-auto px-6 pt-40 pb-20 flex flex-col md:flex-row gap-10">
 
         {/* LEFT SIDEBAR: Filters */}
@@ -187,7 +166,6 @@ export default function CategoryListingPage({
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Refine Collection</h3>
           </div>
 
-          {/* 1st FILTER CLUSTER: DEVICE TYPE */}
           <div>
             <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Device Type</h4>
             <div className="flex flex-col gap-3">
@@ -211,7 +189,6 @@ export default function CategoryListingPage({
             </div>
           </div>
 
-          {/* 2nd FILTER CLUSTER: GLASS CATEGORY/SUBCATEGORY */}
           <div>
             <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Category Type</h4>
             <div className="flex flex-col gap-3">
@@ -235,7 +212,6 @@ export default function CategoryListingPage({
             </div>
           </div>
 
-          {/* 3rd FILTER CLUSTER: PRICE LIMIT BUDGET BOUNDARIES */}
           <div>
             <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-4 tracking-widest">Price Filter</h4>
             <div className="flex flex-col gap-3">
@@ -268,15 +244,27 @@ export default function CategoryListingPage({
               <h2 className="text-3xl font-black uppercase italic tracking-tighter text-black">
                 {categoryName} <span className="text-[#fbea27] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Vault</span>
               </h2>
-              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                {filteredProducts.length} Premium items identified
-              </p>
+              {!isLoading && (
+                <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
+                  {filteredProducts.length} Premium items identified
+                </p>
+              )}
             </div>
-
-            {/* DISCARDED SORT BY BUTTON BLOCK PER YOUR INSTRUCTIONS */}
           </div>
 
-          {filteredProducts.length > 0 ? (
+          {/* --- CONDITIONAL RENDERING: SKELETON VS ACTUAL DATA --- */}
+          {isLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="border-2 border-black/5 p-4 bg-white">
+                  <div className="aspect-[4/5] bg-zinc-200 mb-4 rounded-sm"></div>
+                  <div className="h-4 w-3/4 bg-zinc-200 mb-2 rounded-sm"></div>
+                  <div className="h-5 w-1/4 bg-zinc-300 mb-4 rounded-sm"></div>
+                  <div className="h-10 w-full bg-zinc-200 rounded-sm"></div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((prod, idx) => (
                 <div key={`${prod.id}-${idx}`} className="group border-2 border-black/5 p-4 hover:border-black transition-all bg-white relative shadow-sm">
@@ -299,7 +287,6 @@ export default function CategoryListingPage({
         </main>
       </div>
 
-      {/* REUSABLE FOOTER ENGINES */}
       <Footer />
     </div>
   );

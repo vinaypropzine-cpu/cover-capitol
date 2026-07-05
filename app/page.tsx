@@ -8,50 +8,15 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
-// 1. IMPORT YOUR LIVE ACTION
-// 1. Update your actions import
 import { getProducts, getBanners } from './lib/actions';
-// REPLACED CLERK WITH FIREBASE AUTH
 import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
 import Navbar from '@/app/components/Navbar';
-// 1. Add this import at the very top of app/page.tsx
 import Footer from '@/app/components/Footer';
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
-
-// --- Banner Data (Kept exactly as original) ---
-const BANNERS = [
-  {
-    id: 1,
-    title: "MEGA GLASS SALE",
-    subtitle: "BUY 2 GET 1 FREE",
-    desc: "Premium 9H protection for all iPhone & Samsung models. Limited time offer.",
-    cta: "Shop The Deal",
-    img: "https://images.unsplash.com/photo-1610792516307-ea5acd3c3b00?q=80&w=1200",
-    color: "#000000"
-  },
-  {
-    id: 2,
-    title: "WELCOME OFFER",
-    subtitle: "FLAT 20% OFF",
-    desc: "Use code FIRSTCAPITOL at checkout. Valid on your first order of display armor.",
-    cta: "Claim Discount",
-    img: "https://images.unsplash.com/photo-1556656793-062ff987b50d?q=80&w=1200",
-    color: BRAND_YELLOW
-  },
-  {
-    id: 3,
-    title: "ULTIMATE COMBO",
-    subtitle: "SAVE ₹500",
-    desc: "Get Tempered Glass + Camera Lens Protector bundle starting at just ₹999.",
-    cta: "View Bundles",
-    img: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=1200",
-    color: "#232f3e"
-  }
-];
 
 const REVIEWS = [
   { user: "Arjun V.", model: "iPhone 15 Pro", comment: "Dropped my phone from a moving bike. The Cover Capitol glass shattered but my screen is FLAWLESS. Ordering my 2nd one now!", rating: 5 },
@@ -79,6 +44,7 @@ const TABS_DATA = {
 
 export default function EcommerceSite() {
   const [mounted, setMounted] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
   
   // --- NEW STATES FOR HERO BANNERS ---
@@ -100,6 +66,7 @@ export default function EcommerceSite() {
       // Fetch dynamic banners from MongoDB
       const fetchedBanners = await getBanners();
       setDbBanners(fetchedBanners);
+      setIsLoading(false);
     };
     fetchFromAtlas();
   }, []);
@@ -121,27 +88,6 @@ export default function EcommerceSite() {
     { align: 'start', loop: true },
     [Autoplay({ delay: 4000, stopOnInteraction: false })]
   );
-  const [currentBanner, setCurrentBanner] = useState(0);
-
-  // REMOVED REDUNDANT SCROLL LISTENER (NOW HANDLED BY NAVBAR COMPONENT)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % BANNERS.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const SCREEN_PROTECTION_MODES = [
-    { name: 'Basic Clear', desc: 'HD Transparency', img: 'https://images.unsplash.com/photo-1610792516307-ea5acd3c3b00?q=80&w=100' },
-    { name: 'Matte Finish', desc: 'Anti-Glare Tech', img: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=100' },
-    { name: 'Privacy Shield', desc: 'Anti-Spy Filter', img: 'https://images.unsplash.com/photo-1601593094911-30983cf4eadc?q=80&w=100' },
-  ];
-
-  const DEVICE_BRANDS = [
-    { brand: 'Apple', models: ['iPhone 15 Pro', 'iPhone 14', 'iPhone 13', 'iPhone 16'], img: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=100' },
-    { brand: 'Samsung', models: ['Galaxy S24', 'S23 Ultra', 'Z Fold'], img: 'https://images.unsplash.com/photo-1610792516307-ea5acd3c3b00?q=80&w=100' },
-    { brand: 'Google', models: ['Pixel 8 Pro', 'Pixel 7a', 'Pixel 6'], img: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=100' },
-  ];
 
   const TICKER_ITEMS = [
     { icon: <ShieldCheck size={16} />, text: "9H Hardness Certified" },
@@ -194,8 +140,6 @@ export default function EcommerceSite() {
       console.error("Payment failed:", error);
     }
   };
-
-  if (!mounted) return <div className="min-h-screen bg-[#F2F2F2]" />;
 
   return (
     <div className="min-h-screen bg-[#F2F2F2] text-[#131921] font-sans overflow-x-hidden">
@@ -293,6 +237,30 @@ export default function EcommerceSite() {
               </div>
             )}
           </section>
+        ) : !mounted || isLoading ? (
+          /* --- HIGH-FIDELITY SKELETON LOADING VIEW --- */
+          <div className="w-full animate-pulse min-h-screen bg-[#F2F2F2]">
+            <section className="relative w-full h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+              <div className="flex-1 bg-zinc-200"></div>
+              <div style={{ backgroundColor: BRAND_YELLOW }} className="w-full h-14 flex items-center overflow-hidden border-t border-black/5 shrink-0 z-10 relative opacity-50"></div>
+            </section>
+            
+            <section className="py-20 max-w-7xl mx-auto px-4">
+              <div className="flex items-center justify-between mb-8">
+                <div className="h-8 w-64 bg-zinc-200 rounded-md"></div>
+                <div className="h-10 w-48 bg-zinc-100 rounded-lg border border-zinc-200"></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white p-6 rounded-lg border shadow-sm">
+                    <div className="h-6 w-32 bg-zinc-200 rounded mb-4"></div>
+                    <div className="aspect-square bg-zinc-100 rounded-lg mb-4"></div>
+                    <div className="h-6 w-16 bg-zinc-200 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
         ) : (
           /* --- NORMAL HOME PAGE VIEW --- */
           <>
@@ -312,9 +280,8 @@ export default function EcommerceSite() {
                       </div>
                     ))
                   ) : (
-                     <div className="relative flex-[0_0_100%] h-full flex flex-col items-center justify-center">
-                       <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
-                       <h2 className="text-xl font-black uppercase tracking-widest text-zinc-400">Loading Vault...</h2>
+                     <div className="relative flex-[0_0_100%] h-full flex flex-col items-center justify-center bg-zinc-100">
+                       <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs">No Banners Active</p>
                      </div>
                   )}
                 </div>
@@ -363,36 +330,6 @@ export default function EcommerceSite() {
                     <Link href={`/category/${item.name.toLowerCase().replace(/ /g, '-')}`}><p className="mt-4 text-xs font-bold text-blue-600 hover:text-orange-700 hover:underline cursor-pointer">Shop Now</p></Link>
                   </div>
                 ))}
-              </div>
-            </section>
-
-            <section className="py-10 max-w-7xl mx-auto px-4 overflow-hidden">
-              <div className="relative h-[400px] md:h-[500px] rounded-[2.5rem] overflow-hidden shadow-xl bg-black">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentBanner}
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                    className="absolute inset-0 flex items-center"
-                  >
-                    <div className="absolute inset-0">
-                      <img src={BANNERS[currentBanner].img} className="w-full h-full object-cover opacity-60" alt={BANNERS[currentBanner].title} />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
-                    </div>
-
-                    <div className="relative z-10 px-10 md:px-20 max-w-2xl">
-                      <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-white font-black text-xs uppercase tracking-[0.4em] mb-4 block">{BANNERS[currentBanner].title}</motion.span>
-                      <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ color: currentBanner === 1 ? '#000000' : BRAND_YELLOW }} className={`text-5xl md:text-7xl font-black mb-6 leading-none ${currentBanner === 1 ? 'bg-[#fbea27] px-4 py-2 inline-block rounded-lg' : ''}`}>{BANNERS[currentBanner].subtitle}</motion.h2>
-                      <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-gray-300 text-lg mb-10 font-medium">{BANNERS[currentBanner].desc}</motion.p>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }} style={{ backgroundColor: BRAND_YELLOW }} className="px-10 py-4 rounded-xl font-black text-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg"> {BANNERS[currentBanner].cta} </motion.button>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-
-                <button onClick={() => setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)} className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-[#fbea27] hover:text-black transition-all"> <ChevronLeft size={24} /> </button>
-                <button onClick={() => setCurrentBanner((prev) => (prev + 1) % BANNERS.length)} className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-[#fbea27] hover:text-black transition-all"> <ChevronRight size={24} /> </button>
               </div>
             </section>
 
