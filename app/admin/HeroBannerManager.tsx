@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { UploadButton } from "@uploadthing/react";
-import { OurFileRouter } from "../api/uploadthing/core";
 import { addBanner, deleteBanner } from "../lib/actions";
 import { Trash2 } from "lucide-react";
+import UploadImageButton from "./UploadImageButton";
 
 export default function HeroBannerManager({ banners }: { banners: any[] }) {
-    const [isUploading, setIsUploading] = useState(false);
-
     const handleDelete = async (id: string) => {
         if(confirm("Are you sure you want to remove this banner?")) {
             await deleteBanner(id);
@@ -23,32 +19,11 @@ export default function HeroBannerManager({ banners }: { banners: any[] }) {
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Manage frontend slideshow banners (16:9 ratio recommended)</p>
                 </div>
                 
-                <div className="relative">
-                    {!isUploading && (
-                        <UploadButton<OurFileRouter, any>
-                            endpoint="productImage" // Reusing your existing secure image endpoint
-                            appearance={{
-                                button: "bg-[#000000] text-black border-2 border-black px-6 py-2 font-black uppercase text-[10px] rounded-none hover:bg-black hover:text-[#fbea27] transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
-                                allowedContent: "hidden"
-                            }}
-                            content={{ button: "Upload New Banner" }}
-                            onUploadBegin={() => setIsUploading(true)}
-                            onClientUploadComplete={async (res) => {
-                                await addBanner(res[0].url);
-                                setIsUploading(false);
-                            }}
-                            onUploadError={() => {
-                                alert("Banner Upload Failed!");
-                                setIsUploading(false);
-                            }}
-                        />
-                    )}
-                    {isUploading && (
-                        <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-black animate-pulse py-2 px-4 border-2 border-dashed border-black">
-                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                            Uploading...
-                        </div>
-                    )}
+                <div className="w-full md:w-56">
+                    <UploadImageButton
+                        label="Upload New Banner"
+                        onUploaded={(url) => addBanner(url)}
+                    />
                 </div>
             </div>
 

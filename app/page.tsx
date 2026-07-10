@@ -8,7 +8,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
-import { getProducts, getBanners } from './lib/actions';
+import { getProducts, getBanners, getCategoryTiles } from './lib/actions';
 import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
@@ -34,12 +34,6 @@ const TABS_DATA = {
     { id: 3, name: 'Back ScreenGuard', count: '40+ Models', img: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=400' },
     { id: 4, name: 'Combo', count: '200+ Designs', img: 'https://images.unsplash.com/photo-1603313011101-31c726a55d4c?q=80&w=400' },
   ],
-  brands: [
-    { id: 1, name: 'Apple iPhone', count: 'iPhone 11 - 15 Pro Max', img: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=400' },
-    { id: 2, name: 'Samsung Galaxy', count: 'S & M Series', img: 'https://images.unsplash.com/photo-1610792516307-ea5acd3c3b00?q=80&w=400' },
-    { id: 3, name: 'Google Pixel', count: 'Pixel 6 - 8 Pro', img: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=400' },
-    { id: 4, name: 'OnePlus', count: '9 - 12 Series', img: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=400' },
-  ]
 };
 
 export default function EcommerceSite() {
@@ -49,6 +43,7 @@ export default function EcommerceSite() {
   
   // --- NEW STATES FOR HERO BANNERS ---
   const [dbBanners, setDbBanners] = useState<any[]>([]);
+  const [dbCategoryTiles, setDbCategoryTiles] = useState<any[]>([]);
   const [heroEmblaRef, heroEmblaApi] = useEmblaCarousel(
     { loop: true },
     [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -66,6 +61,9 @@ export default function EcommerceSite() {
       // Fetch dynamic banners from MongoDB
       const fetchedBanners = await getBanners();
       setDbBanners(fetchedBanners);
+      // Fetch the "Shop Your Preference" blocks (admin-managed images)
+      const fetchedTiles = await getCategoryTiles();
+      setDbCategoryTiles(fetchedTiles);
       setIsLoading(false);
     };
     fetchFromAtlas();
@@ -104,6 +102,11 @@ export default function EcommerceSite() {
     back: 'Back ScreenGuard',
     combo: 'Combo'
   };
+
+  // Unique brands derived from the products the admin has uploaded
+  const liveBrands = [...new Set(liveProducts.map((p) => p.brand).filter(Boolean))].sort() as string[];
+  // Brands whose /brands/<slug>.svg logo failed to load fall back to a monogram
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
   const searchResults = liveProducts.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -321,16 +324,56 @@ export default function EcommerceSite() {
                   <button onClick={() => setActiveTab('brands')} className={`px-6 py-2 text-xs font-bold rounded-md transition-all ${activeTab === 'brands' ? 'bg-[#232f3e] text-white' : 'text-gray-500 hover:bg-gray-100'}`}>Brand</button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {TABS_DATA[activeTab].map(item => (
-                  <div key={item.id} className="bg-white p-6 rounded-lg border shadow-sm group cursor-pointer hover:shadow-md transition-all">
-                    <h4 className="font-bold text-lg mb-4 text-black">{item.name}</h4>
-                    <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4"><img src={item.img} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>
-                    <p style={{ color: 'black' }} className="text-xs font-black uppercase bg-black/5 p-2 rounded inline-block">{item.count}</p>
-                    <Link href={`/category/${item.name.toLowerCase().replace(/ /g, '-')}`}><p className="mt-4 text-xs font-bold text-blue-600 hover:text-orange-700 hover:underline cursor-pointer">Shop Now</p></Link>
-                  </div>
-                ))}
-              </div>
+              {activeTab === 'categories' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {(dbCategoryTiles.length > 0 ? dbCategoryTiles : TABS_DATA.categories).map((item: any) => (
+                    <Link
+                      key={item._id || item.id}
+                      href={`/category/${item.slug || item.name.toLowerCase().replace(/ /g, '-')}`}
+                      className="bg-white p-6 rounded-lg border shadow-sm group cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
+                    >
+                      <h4 className="font-bold text-lg mb-4 text-black">{item.name}</h4>
+                      <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-5">
+                        <img src={item.imageUrl || item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </div>
+                      <span style={{ backgroundColor: BRAND_YELLOW }} className="mt-auto w-full py-3 rounded-md text-[11px] font-black uppercase tracking-widest text-black flex items-center justify-center gap-2 border border-black/10 group-hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-0.5 transition-all">
+                        Shop Now <ChevronRight size={14} />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                /* Brand logos derived from admin-uploaded products */
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {liveBrands.map((brand) => {
+                    const slug = brand.toLowerCase().replace(/ /g, '-');
+                    return (
+                      <Link
+                        key={brand}
+                        href={`/brand/${slug}`}
+                        className="relative bg-white rounded-xl border border-black/10 shadow-sm group cursor-pointer overflow-hidden hover:border-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-4 p-8"
+                      >
+                        <div className="h-12 w-full flex items-center justify-center">
+                          {failedLogos[slug] ? (
+                            <span style={{ backgroundColor: BRAND_YELLOW }} className="w-12 h-12 rounded-full border-2 border-black flex items-center justify-center text-lg font-black text-black">
+                              {brand.charAt(0).toUpperCase()}
+                            </span>
+                          ) : (
+                            <img
+                              src={`/brands/${slug}.svg`}
+                              alt={`${brand} logo`}
+                              className="max-h-10 max-w-[65%] object-contain group-hover:scale-110 transition-transform duration-300"
+                              onError={() => setFailedLogos((prev) => ({ ...prev, [slug]: true }))}
+                            />
+                          )}
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-black text-center transition-colors">{brand}</span>
+                        <span style={{ backgroundColor: BRAND_YELLOW }} className="absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-300" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* --- BEST SELLERS: UNIQUE KEY IMPLEMENTED --- */}

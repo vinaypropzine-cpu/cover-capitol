@@ -1,6 +1,6 @@
 "use server";
 // app/admin/page.tsx
-import { getProducts, getBanners, getAnnouncement, getDeviceBrands, getScreenMenus } from "../lib/actions"; // 1. IMPORT getBanners
+import { getProducts, getBanners, getAnnouncement, getDeviceBrands, getScreenMenus, getCategoryTiles } from "../lib/actions"; // 1. IMPORT getBanners
 import DeleteButton from "./DeleteButton"; // Import the new button
 import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
@@ -12,6 +12,8 @@ import HeroBannerManager from "./HeroBannerManager"; // 2. IMPORT THE NEW MANAGE
 import AnnouncementManager from "./AnnouncementManager"; // Add this import
 import DeviceManager from "./DeviceManager"; // Add this import
 import ScreenMenuManager from "./ScreenMenuManager"; // Add this import
+import CategoryTileManager from "./CategoryTileManager"; // Add this import
+import AdminShell from "./AdminShell"; // Sidebar layout with tabbed sections
 
 
 
@@ -21,23 +23,30 @@ export default async function AdminDashboard() {
     const announcement = await getAnnouncement(); // Add this line
     const deviceBrands = await getDeviceBrands(); // Fectch device data
     const screenMenus = await getScreenMenus(); // Fetch screen menu data
+    const categoryTiles = await getCategoryTiles(); // Fetch homepage preference blocks
     return (
-        <div className="p-4 bg-white min-h-screen text-black font-sans">
-            {/* Add the Promo Bar Manager here */}
-            <AnnouncementManager initialData={announcement} />
-            {/* Add the Screen Menu Manager here */}
-            <ScreenMenuManager initialData={screenMenus} />
-            {/* Add the Device Menu Manager here */}
-            <DeviceManager initialData={deviceBrands} />
-            {/* 4. RENDER THE HERO BILLBOARD MANAGER RIGHT AT THE TOP */}
-            <HeroBannerManager banners={banners} />
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-black uppercase tracking-tighter">Inventory Control</h1>
+        <AdminShell
+            announcement={<AnnouncementManager initialData={announcement} />}
+            menus={
+                <>
+                    <ScreenMenuManager initialData={screenMenus} />
+                    <DeviceManager initialData={deviceBrands} />
+                </>
+            }
+            homepage={
+                <>
+                    <HeroBannerManager banners={banners} />
+                    <CategoryTileManager tiles={categoryTiles} />
+                </>
+            }
+            inventory={
+                <>
+            <div className="flex justify-end mb-6">
                 <AddProductModal /> {/* 👈 Your new functional modal */}
             </div>
 
             {/* Structured Table based on Hand-Drawn Sketch */}
-            <div className="border-2 border-black overflow-hidden">
+            <div className="border-2 border-black overflow-x-auto bg-white">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         {/* Main Categories */}
@@ -107,7 +116,9 @@ export default async function AdminDashboard() {
                     </tbody>
                 </table>
             </div>
-        </div>
+                </>
+            }
+        />
     );
 }
 

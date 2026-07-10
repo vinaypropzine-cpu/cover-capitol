@@ -5,6 +5,7 @@ import {
   ShoppingBag, Search, ChevronDown, ShieldCheck, Zap, X, Trash2, Menu, User
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../useCartStore';
 import { useAuth } from '../context/AuthContext'; 
@@ -112,6 +113,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
       {/* 2. Main Header Row */}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
+          <Image src="/logo.svg" alt="Cover Capital logo" width={40} height={40} className="h-10 w-10" priority />
           <h1 className="text-xl font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
         </Link>
 

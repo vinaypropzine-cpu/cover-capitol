@@ -5,6 +5,7 @@ import Product from "@/models/product";
 import { revalidatePath } from "next/cache";
 import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
 import Announcement from "@/models/announcement";
+import CategoryTile from "@/models/categoryTile";
 import DeviceBrand from "@/models/deviceBrand";
 import ScreenMenu from "@/models/screenMenu";
 
@@ -107,6 +108,50 @@ export async function deleteBanner(bannerId: string) {
     return { success: true };
   } catch (error) {
     console.error("Banner Deletion Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// CATEGORY TILE ACTIONS (Shop Your Preference)
+// ==========================================
+
+/**
+ * READ: Fetches the 4 homepage "Shop Your Preference" blocks.
+ * Injects the default blocks if the database is empty.
+ */
+export async function getCategoryTiles() {
+  await connectDB();
+  let tiles = await CategoryTile.find().sort({ order: 1 }).lean();
+
+  if (tiles.length === 0) {
+    const defaultTiles = [
+      { name: 'Tempered Glass', slug: 'tempered-glass', imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=400', order: 1 },
+      { name: 'Camera Guard', slug: 'camera-guard', imageUrl: 'https://images.unsplash.com/photo-1601593094911-30983cf4eadc?q=80&w=400', order: 2 },
+      { name: 'Back ScreenGuard', slug: 'back-screenguard', imageUrl: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=400', order: 3 },
+      { name: 'Combo', slug: 'combo', imageUrl: 'https://images.unsplash.com/photo-1603313011101-31c726a55d4c?q=80&w=400', order: 4 },
+    ];
+    await CategoryTile.insertMany(defaultTiles);
+    tiles = await CategoryTile.find().sort({ order: 1 }).lean();
+  }
+
+  return JSON.parse(JSON.stringify(tiles));
+}
+
+/**
+ * UPDATE: Swaps the image of a specific preference block.
+ */
+export async function updateCategoryTileImage(tileId: string, imageUrl: string) {
+  try {
+    await connectDB();
+    await CategoryTile.findByIdAndUpdate(tileId, { imageUrl });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Category Tile Update Error:", error);
     return { success: false };
   }
 }
