@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import HeroBanner from "@/models/hero"; // <-- ADD THIS LINE
 import Announcement from "@/models/announcement";
 import CategoryTile from "@/models/categoryTile";
+import PromoBanner from "@/models/promoBanner";
 import DeviceBrand from "@/models/deviceBrand";
 import ScreenMenu from "@/models/screenMenu";
 
@@ -108,6 +109,55 @@ export async function deleteBanner(bannerId: string) {
     return { success: true };
   } catch (error) {
     console.error("Banner Deletion Error:", error);
+    return { success: false };
+  }
+}
+
+// ==========================================
+// PROMO / OFFER BANNER ACTIONS (Homepage slideshow)
+// ==========================================
+
+/**
+ * READ: Fetches all active offer banners for the homepage slideshow.
+ */
+export async function getPromoBanners() {
+  await connectDB();
+  const banners = await PromoBanner.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+  return JSON.parse(JSON.stringify(banners));
+}
+
+/**
+ * CREATE: Saves a new offer banner with its click-through link.
+ */
+export async function addPromoBanner(imageUrl: string, linkUrl: string) {
+  try {
+    await connectDB();
+    await PromoBanner.create({ imageUrl, linkUrl, isActive: true });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Promo Banner Save Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Removes an offer banner.
+ */
+export async function deletePromoBanner(bannerId: string) {
+  try {
+    await connectDB();
+    await PromoBanner.findByIdAndDelete(bannerId);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Promo Banner Deletion Error:", error);
     return { success: false };
   }
 }

@@ -1,6 +1,6 @@
 "use server";
 // app/admin/page.tsx
-import { getProducts, getBanners, getAnnouncement, getDeviceBrands, getScreenMenus, getCategoryTiles } from "../lib/actions"; // 1. IMPORT getBanners
+import { getProducts, getBanners, getAnnouncement, getDeviceBrands, getScreenMenus, getCategoryTiles, getPromoBanners } from "../lib/actions"; // 1. IMPORT getBanners
 import DeleteButton from "./DeleteButton"; // Import the new button
 import { connectDB } from "@/lib/db";
 import Product from "@/models/product";
@@ -14,6 +14,7 @@ import DeviceManager from "./DeviceManager"; // Add this import
 import ScreenMenuManager from "./ScreenMenuManager"; // Add this import
 import CategoryTileManager from "./CategoryTileManager"; // Add this import
 import AdminShell from "./AdminShell"; // Sidebar layout with tabbed sections
+import PromoBannerManager from "./PromoBannerManager"; // Offer announcement slideshow manager
 
 
 
@@ -24,6 +25,7 @@ export default async function AdminDashboard() {
     const deviceBrands = await getDeviceBrands(); // Fectch device data
     const screenMenus = await getScreenMenus(); // Fetch screen menu data
     const categoryTiles = await getCategoryTiles(); // Fetch homepage preference blocks
+    const promoBanners = await getPromoBanners(); // Fetch offer announcement banners
     return (
         <AdminShell
             announcement={<AnnouncementManager initialData={announcement} />}
@@ -36,6 +38,7 @@ export default async function AdminDashboard() {
             homepage={
                 <>
                     <HeroBannerManager banners={banners} />
+                    <PromoBannerManager banners={promoBanners} />
                     <CategoryTileManager tiles={categoryTiles} />
                 </>
             }

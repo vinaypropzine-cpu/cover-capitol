@@ -86,6 +86,15 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
     }
   };
 
+  // Screen Protection dropdown: navbar wording maps to product fields --
+  // "Shop By Device" -> deviceType, "Shop By Type" -> subCategory,
+  // "Shop By Category" -> finish (types[].name). All within Tempered Glass.
+  const screenMenuHref = (menuTitle: string, item: string) => {
+    const t = (menuTitle || '').toLowerCase();
+    const param = t.includes('device') ? 'device' : t.includes('type') ? 'type' : 'finish';
+    return `/shop?category=tempered-glass&${param}=${encodeURIComponent(item)}`;
+  };
+
   const verifyOTP = async () => {
     setError("");
     try {
@@ -200,7 +209,15 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                       <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{menu.title}</h4>
                       <ul className="flex flex-col gap-2">
                         {menu.items.map((item: string) => (
-                          <li key={item} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{item}</li>
+                          <li key={item}>
+                            <Link
+                              href={screenMenuHref(menu.title, item)}
+                              onClick={() => setActiveMenu(null)}
+                              className="block text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]"
+                            >
+                              {item}
+                            </Link>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -210,10 +227,24 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
                 /* DYNAMIC DATABASE RENDER */
                 dbDevices.map(brandGroup => (
                   <div key={brandGroup.brand} className="flex flex-col gap-4">
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest">{brandGroup.brand}</h4>
+                    <Link
+                      href={`/brand/${brandGroup.brand.toLowerCase().replace(/ /g, '-')}`}
+                      onClick={() => setActiveMenu(null)}
+                      className="font-black uppercase text-xs border-b-2 border-black pb-2 tracking-widest hover:text-zinc-600 transition-colors"
+                    >
+                      {brandGroup.brand}
+                    </Link>
                     <ul className="flex flex-col gap-2">
                       {brandGroup.models.map((model: string) => (
-                        <li key={model} className="text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]">{model}</li>
+                        <li key={model}>
+                          <Link
+                            href={`/shop?model=${encodeURIComponent(model)}`}
+                            onClick={() => setActiveMenu(null)}
+                            className="block text-zinc-500 font-bold hover:text-black hover:translate-x-1 transition-all cursor-pointer uppercase text-[10px]"
+                          >
+                            {model}
+                          </Link>
+                        </li>
                       ))}
                     </ul>
                   </div>

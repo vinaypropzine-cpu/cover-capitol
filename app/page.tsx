@@ -8,7 +8,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from './useCartStore';
-import { getProducts, getBanners, getCategoryTiles } from './lib/actions';
+import { getProducts, getBanners, getCategoryTiles, getPromoBanners } from './lib/actions';
 import { useAuth } from './context/AuthContext';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
@@ -44,6 +44,14 @@ export default function EcommerceSite() {
   // --- NEW STATES FOR HERO BANNERS ---
   const [dbBanners, setDbBanners] = useState<any[]>([]);
   const [dbCategoryTiles, setDbCategoryTiles] = useState<any[]>([]);
+
+  // --- OFFER ANNOUNCEMENT SLIDESHOW (between preference & best sellers) ---
+  const [dbPromoBanners, setDbPromoBanners] = useState<any[]>([]);
+  const [promoEmblaRef, promoEmblaApi] = useEmblaCarousel(
+    { loop: true },
+    [Autoplay({ delay: 4000, stopOnInteraction: false })]
+  );
+  const [promoSelectedIndex, setPromoSelectedIndex] = useState(0);
   const [heroEmblaRef, heroEmblaApi] = useEmblaCarousel(
     { loop: true },
     [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -64,6 +72,9 @@ export default function EcommerceSite() {
       // Fetch the "Shop Your Preference" blocks (admin-managed images)
       const fetchedTiles = await getCategoryTiles();
       setDbCategoryTiles(fetchedTiles);
+      // Fetch the clickable offer announcement banners
+      const fetchedPromos = await getPromoBanners();
+      setDbPromoBanners(fetchedPromos);
       setIsLoading(false);
     };
     fetchFromAtlas();
@@ -76,6 +87,13 @@ export default function EcommerceSite() {
     heroEmblaApi.on('select', onSelect);
     onSelect();
   }, [heroEmblaApi]);
+
+  useEffect(() => {
+    if (!promoEmblaApi) return;
+    const onSelect = () => setPromoSelectedIndex(promoEmblaApi.selectedScrollSnap());
+    promoEmblaApi.on('select', onSelect);
+    onSelect();
+  }, [promoEmblaApi]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const { items, addToCart, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
@@ -375,6 +393,45 @@ export default function EcommerceSite() {
                 </div>
               )}
             </section>
+
+            {/* --- CLICKABLE OFFER ANNOUNCEMENT SLIDESHOW (admin-managed) --- */}
+            {dbPromoBanners.length > 0 && (
+              <section className="pb-20 max-w-7xl mx-auto px-4">
+                <div className="relative overflow-hidden rounded-2xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]" ref={promoEmblaRef}>
+                  <div className="flex">
+                    {dbPromoBanners.map((banner, idx) => (
+                      <Link
+                        key={banner._id || idx}
+                        href={banner.linkUrl || '/'}
+                        className="relative flex-[0_0_100%] block group"
+                      >
+                        <img
+                          src={banner.imageUrl}
+                          className="w-full h-[22rem] md:h-[30rem] object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                          alt={`Offer announcement ${idx + 1}`}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* DOT NAVIGATION */}
+                  {dbPromoBanners.length > 1 && (
+                    <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2 z-10 pointer-events-none">
+                      {dbPromoBanners.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => promoEmblaApi?.scrollTo(idx)}
+                          className={`w-2.5 h-2.5 rounded-full border-2 border-white transition-all duration-300 pointer-events-auto ${
+                            promoSelectedIndex === idx ? 'bg-white scale-125' : 'bg-transparent hover:bg-white/50'
+                          }`}
+                          aria-label={`Go to offer ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* --- BEST SELLERS: UNIQUE KEY IMPLEMENTED --- */}
             <section className="py-20 bg-white">
