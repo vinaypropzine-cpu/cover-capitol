@@ -217,7 +217,7 @@ export default function EcommerceSite() {
         )}
       </AnimatePresence>
 
-      <main className="pt-[104px]">
+      <main className="pt-[190px] sm:pt-[104px]">
         {searchQuery.length > 0 ? (
           /* --- SEARCH RESULTS VIEW: FIXED DUPLICATE KEY ERRORS --- */
           <section className="py-20 max-w-7xl mx-auto px-6 min-h-screen">
@@ -261,7 +261,7 @@ export default function EcommerceSite() {
         ) : !mounted || isLoading ? (
           /* --- HIGH-FIDELITY SKELETON LOADING VIEW --- */
           <div className="w-full animate-pulse min-h-screen bg-[#F2F2F2]">
-            <section className="relative w-full h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+            <section className="relative w-full h-[calc(100vh-190px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               <div className="flex-1 bg-zinc-200"></div>
               <div style={{ backgroundColor: BRAND_YELLOW }} className="w-full h-14 flex items-center overflow-hidden border-t border-black/5 shrink-0 z-10 relative opacity-50"></div>
             </section>
@@ -285,7 +285,7 @@ export default function EcommerceSite() {
         ) : (
           /* --- NORMAL HOME PAGE VIEW --- */
           <>
-            <section className="relative w-full h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+            <section className="relative w-full h-[calc(100vh-190px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               {/* 1. EMBLA CAROUSEL (Takes all remaining vertical space) */}
               <div className="flex-1 overflow-hidden relative bg-zinc-100" ref={heroEmblaRef}>
                 <div className="flex h-full">
@@ -335,7 +335,7 @@ export default function EcommerceSite() {
             </section>
 
             <section className="py-20 max-w-7xl mx-auto px-4">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <h3 className="text-2xl font-bold text-black">Shop Your Preference</h3>
                 <div className="flex bg-white rounded-lg border p-1 shadow-sm">
                   <button onClick={() => setActiveTab('categories')} className={`px-6 py-2 text-xs font-bold rounded-md transition-all ${activeTab === 'categories' ? 'bg-[#232f3e] text-white' : 'text-gray-500 hover:bg-gray-100'}`}>Category</button>

@@ -155,7 +155,7 @@ export default function BrandListingPage({
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto px-6 pt-40 pb-20 flex flex-col md:flex-row gap-10">
+      <div className="max-w-7xl mx-auto px-6 pt-52 sm:pt-40 pb-20 flex flex-col md:flex-row gap-10">
 
         {/* LEFT SIDEBAR: Filters */}
         <aside className="w-full md:w-64 flex-shrink-0 border-r-2 border-black/5 pr-0 md:pr-8 flex flex-col gap-10 text-left">

@@ -112,26 +112,26 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
     <header className="fixed top-0 w-full z-[100] bg-[#131921] text-white">
       {/* 1. DYNAMIC Announcement Bar */}
       {promo.isActive && (
-        <div style={{ backgroundColor: BRAND_YELLOW }} className="py-2 text-center border-b border-black">
+        <div style={{ backgroundColor: BRAND_YELLOW }} className="py-2 px-3 text-center border-b border-black">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black flex items-center justify-center gap-2">
-            <ShieldCheck size={14} /> {promo.text} <Zap size={14} fill="black" />
+            <ShieldCheck size={14} className="shrink-0" /> <span className="truncate">{promo.text}</span> <Zap size={14} fill="black" className="shrink-0" />
           </p>
         </div>
       )}
 
       {/* 2. Main Header Row */}
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4 md:gap-8">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3 md:gap-8">
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-          <Image src="/logo.svg" alt="Cover Capital logo" width={40} height={40} className="h-10 w-10" priority />
-          <h1 className="text-xl font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
+          <Image src="/logo.svg" alt="Cover Capital logo" width={40} height={40} className="h-9 w-9 sm:h-10 sm:w-10" priority />
+          <h1 className="text-lg sm:text-xl font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
         </Link>
 
-        {/* Search Bar */}
-        <div className="flex-1 flex h-10 overflow-hidden rounded-md group border-2 border-transparent focus-within:border-[#fbea27] transition-all">
+        {/* Search Bar (desktop / tablet) */}
+        <div className="hidden sm:flex flex-1 h-10 overflow-hidden rounded-md group border-2 border-transparent focus-within:border-[#fbea27] transition-all">
           <input
             type="text"
             placeholder="Search for screen guards..."
-            className="flex-1 px-4 text-sm text-black outline-none bg-white font-bold"
+            className="flex-1 min-w-0 px-4 text-sm text-black outline-none bg-white font-bold"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -141,13 +141,15 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
         </div>
 
         {/* Auth & Cart */}
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
           {!user ? (
             <button
               onClick={() => setShowLogin(true)}
-              className="text-[10px] font-black uppercase border-2 border-white px-5 py-2 hover:bg-[#fbea27] hover:text-black hover:border-[#fbea27] transition-all"
+              aria-label="Login / Signup"
+              className="relative p-1 group cursor-pointer"
             >
-              login / signup
+              <User size={26} className="text-white group-hover:text-[#fbea27] transition-colors" />
+              <Zap size={15} fill={BRAND_YELLOW} className="absolute -bottom-0.5 -right-1.5 text-[#131921] rotate-[15deg]" />
             </button>
           ) : (
             <div className="flex items-center gap-3 border-l border-white/20 pl-4">
@@ -169,13 +171,30 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
         </div>
       </div>
 
+      {/* 2b. Mobile Search Row (full width, own line) */}
+      <div className="sm:hidden px-4 pb-3">
+        <div className="flex h-10 overflow-hidden rounded-md border-2 border-transparent focus-within:border-[#fbea27] transition-all">
+          <input
+            type="text"
+            placeholder="Search for screen guards..."
+            className="flex-1 min-w-0 px-4 text-sm text-black outline-none bg-white font-bold"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button style={{ backgroundColor: BRAND_YELLOW }} className="px-4 text-black hover:brightness-90 transition-all flex items-center justify-center">
+            <Search size={18} />
+          </button>
+        </div>
+      </div>
+
       {/* 3. Sub-Nav Navigation */}
       <div className="bg-[#232f3e] border-t border-white/5 overflow-x-auto no-scrollbar">
-        <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-center gap-8 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+        <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-start md:justify-center gap-6 md:gap-8 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
           <div
             className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2"
             onMouseEnter={() => setActiveMenu('screen')}
             onMouseLeave={() => setActiveMenu(null)}
+            onClick={() => setActiveMenu(activeMenu === 'screen' ? null : 'screen')}
           >
             Screen Protection <ChevronDown size={12} />
           </div>
@@ -185,6 +204,7 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
             className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2"
             onMouseEnter={() => setActiveMenu('device')}
             onMouseLeave={() => setActiveMenu(null)}
+            onClick={() => setActiveMenu(activeMenu === 'device' ? null : 'device')}
           >
             Shop By Device <ChevronDown size={12} />
           </div>
@@ -199,9 +219,9 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           <motion.div
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
             onMouseEnter={() => setActiveMenu(activeMenu)} onMouseLeave={() => setActiveMenu(null)}
-            className="fixed top-[104px] left-0 w-full bg-white shadow-2xl border-b-4 border-black z-[99]"
+            className="absolute top-full left-0 w-full bg-white shadow-2xl border-b-4 border-black z-[99] max-h-[65vh] overflow-y-auto"
           >
-            <div className="max-w-7xl mx-auto p-10 grid grid-cols-3 gap-12 text-black">
+            <div className="max-w-7xl mx-auto p-6 sm:p-10 grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 text-black">
               {activeMenu === 'screen' ? (
                 <>
                   {dbScreenMenus.map((menu) => (
