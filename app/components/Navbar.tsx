@@ -22,6 +22,14 @@ interface NavbarProps {
 
 export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  // --- MOBILE HAMBURGER DRAWER ---
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const closeMobileNav = () => {
+    setMobileNavOpen(false);
+    setExpandedSection(null);
+  };
   const { items, removeFromCart, isCartOpen, toggleCart, totalItems } = useCartStore();
   const { user, logout } = useAuth(); 
 
@@ -121,6 +129,14 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
 
       {/* 2. Main Header Row */}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3 md:gap-8">
+        <button
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+          className="sm:hidden p-1 -ml-1 text-white hover:text-[#fbea27] transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
           <Image src="/logo.svg" alt="Cover Capital logo" width={40} height={40} className="h-9 w-9 sm:h-10 sm:w-10" priority />
           <h1 className="text-lg sm:text-xl font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></h1>
@@ -187,8 +203,8 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
         </div>
       </div>
 
-      {/* 3. Sub-Nav Navigation */}
-      <div className="bg-[#232f3e] border-t border-white/5 overflow-x-auto no-scrollbar">
+      {/* 3. Sub-Nav Navigation (collapses into the hamburger drawer on phones) */}
+      <div className="hidden sm:block bg-[#232f3e] border-t border-white/5 overflow-x-auto no-scrollbar">
         <nav className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-start md:justify-center gap-6 md:gap-8 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
           <div
             className="flex items-center gap-1 cursor-pointer hover:text-[#fbea27] transition-colors py-2"
@@ -212,6 +228,104 @@ export default function Navbar({ searchQuery, setSearchQuery }: NavbarProps) {
           <Link href="/deals" className="hover:text-orange-400 transition-colors">Deals</Link>
         </nav>
       </div>
+
+      {/* --- MOBILE HAMBURGER DRAWER --- */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={closeMobileNav}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] sm:hidden"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.25 }}
+              className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-[#131921] z-[141] sm:hidden overflow-y-auto flex flex-col"
+            >
+              <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <Image src="/logo.svg" alt="Cover Capital logo" width={32} height={32} className="h-8 w-8" />
+                  <p className="text-sm font-black tracking-tight italic">COVER<span style={{ color: BRAND_YELLOW }}>CAPITAL</span></p>
+                </div>
+                <button onClick={closeMobileNav} aria-label="Close menu" className="p-2 text-white hover:text-[#fbea27] transition-colors">
+                  <X size={22} />
+                </button>
+              </div>
+
+              <nav className="flex flex-col p-4 text-white">
+                {/* Screen Protection accordion */}
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'screen' ? null : 'screen')}
+                  className="flex items-center justify-between py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest"
+                >
+                  Screen Protection
+                  <ChevronDown size={14} className={`transition-transform ${expandedSection === 'screen' ? 'rotate-180 text-[#fbea27]' : ''}`} />
+                </button>
+                {expandedSection === 'screen' && (
+                  <div className="py-2 border-b border-white/10">
+                    {dbScreenMenus.map((menu) => (
+                      <div key={menu._id || menu.title} className="mb-3">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#fbea27] py-2">{menu.title}</p>
+                        {menu.items.map((item: string) => (
+                          <Link
+                            key={item}
+                            href={screenMenuHref(menu.title, item)}
+                            onClick={closeMobileNav}
+                            className="block py-2 pl-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white"
+                          >
+                            {item}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Link href="/category/camera-guard" onClick={closeMobileNav} className="py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest hover:text-[#fbea27]">Camera Guard</Link>
+                <Link href="/category/back-screenguard" onClick={closeMobileNav} className="py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest hover:text-[#fbea27]">Back ScreenGuard</Link>
+
+                {/* Shop By Device accordion */}
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'device' ? null : 'device')}
+                  className="flex items-center justify-between py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest"
+                >
+                  Shop By Device
+                  <ChevronDown size={14} className={`transition-transform ${expandedSection === 'device' ? 'rotate-180 text-[#fbea27]' : ''}`} />
+                </button>
+                {expandedSection === 'device' && (
+                  <div className="py-2 border-b border-white/10">
+                    {dbDevices.map((brandGroup) => (
+                      <div key={brandGroup.brand} className="mb-3">
+                        <Link
+                          href={`/brand/${brandGroup.brand.toLowerCase().replace(/ /g, '-')}`}
+                          onClick={closeMobileNav}
+                          className="block text-[9px] font-black uppercase tracking-[0.2em] text-[#fbea27] py-2"
+                        >
+                          {brandGroup.brand}
+                        </Link>
+                        {brandGroup.models.map((model: string) => (
+                          <Link
+                            key={model}
+                            href={`/shop?model=${encodeURIComponent(model)}`}
+                            onClick={closeMobileNav}
+                            className="block py-2 pl-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white"
+                          >
+                            {model}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Link href="/best-sellers" onClick={closeMobileNav} className="py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest hover:text-[#fbea27]">Best Sellers</Link>
+                <Link href="/deals" onClick={closeMobileNav} className="py-4 border-b border-white/10 text-[11px] font-black uppercase tracking-widest text-orange-400 hover:text-orange-300">Deals</Link>
+              </nav>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* --- DROP DOWN MENUS --- */}
       <AnimatePresence>

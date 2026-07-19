@@ -77,12 +77,13 @@ export async function getBanners() {
 }
 
 /**
- * CREATE: Saves a new UploadThing banner URL directly to the database
+ * CREATE: Saves a new hero slide. Desktop artwork is required; the
+ * portrait mobile artwork is optional (phones fall back to desktop).
  */
-export async function addBanner(imageUrl: string) {
+export async function addBanner(imageUrl: string, mobileImageUrl: string = "") {
   try {
     await connectDB();
-    await HeroBanner.create({ imageUrl, isActive: true });
+    await HeroBanner.create({ imageUrl, mobileImageUrl, isActive: true });
     
     // Refresh the home page and admin panel to show the new slide instantly
     revalidatePath("/admin");
@@ -91,6 +92,24 @@ export async function addBanner(imageUrl: string) {
     return { success: true };
   } catch (error) {
     console.error("Banner Save Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * UPDATE: Sets or replaces the mobile artwork of an existing hero slide.
+ */
+export async function updateBannerMobileImage(bannerId: string, mobileImageUrl: string) {
+  try {
+    await connectDB();
+    await HeroBanner.findByIdAndUpdate(bannerId, { mobileImageUrl });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Banner Mobile Image Update Error:", error);
     return { success: false };
   }
 }

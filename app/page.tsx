@@ -217,7 +217,7 @@ export default function EcommerceSite() {
         )}
       </AnimatePresence>
 
-      <main className="pt-[190px] sm:pt-[104px]">
+      <main className="pt-[150px] sm:pt-[104px]">
         {searchQuery.length > 0 ? (
           /* --- SEARCH RESULTS VIEW: FIXED DUPLICATE KEY ERRORS --- */
           <section className="py-20 max-w-7xl mx-auto px-6 min-h-screen">
@@ -261,7 +261,7 @@ export default function EcommerceSite() {
         ) : !mounted || isLoading ? (
           /* --- HIGH-FIDELITY SKELETON LOADING VIEW --- */
           <div className="w-full animate-pulse min-h-screen bg-[#F2F2F2]">
-            <section className="relative w-full h-[calc(100vh-190px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+            <section className="relative w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               <div className="flex-1 bg-zinc-200"></div>
               <div style={{ backgroundColor: BRAND_YELLOW }} className="w-full h-14 flex items-center overflow-hidden border-t border-black/5 shrink-0 z-10 relative opacity-50"></div>
             </section>
@@ -285,18 +285,24 @@ export default function EcommerceSite() {
         ) : (
           /* --- NORMAL HOME PAGE VIEW --- */
           <>
-            <section className="relative w-full h-[calc(100vh-190px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
+            <section className="relative w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-104px)] flex flex-col bg-white overflow-hidden">
               {/* 1. EMBLA CAROUSEL (Takes all remaining vertical space) */}
               <div className="flex-1 overflow-hidden relative bg-zinc-100" ref={heroEmblaRef}>
                 <div className="flex h-full">
                   {dbBanners.length > 0 ? (
                     dbBanners.map((banner, idx) => (
                       <div key={banner._id || idx} className="relative flex-[0_0_100%] h-full">
-                        <img 
-                          src={banner.imageUrl} 
-                          className="w-full h-full object-cover" 
-                          alt={`Hero Slide ${idx + 1}`} 
-                        />
+                        {/* Browser picks the artwork matching the screen size; phones fall back to desktop art if no mobile image is set */}
+                        <picture className="block w-full h-full">
+                          {banner.mobileImageUrl && (
+                            <source media="(max-width: 639px)" srcSet={banner.mobileImageUrl} />
+                          )}
+                          <img
+                            src={banner.imageUrl}
+                            className="w-full h-full object-cover"
+                            alt={`Hero Slide ${idx + 1}`}
+                          />
+                        </picture>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                       </div>
                     ))
