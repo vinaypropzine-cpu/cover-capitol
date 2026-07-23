@@ -225,6 +225,50 @@ export async function updateCategoryTileImage(tileId: string, imageUrl: string) 
   }
 }
 
+/**
+ * CREATE: Adds a brand-new preference category. The slug is derived from
+ * the name; the tile links to /shop?category=<name> which matches products
+ * on their `category` field, so any new category works without code changes.
+ */
+export async function addCategoryTile(name: string, imageUrl: string) {
+  try {
+    await connectDB();
+    const cleanName = name.trim();
+    const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    // Append to the end of the row
+    const last = await CategoryTile.find().sort({ order: -1 }).limit(1).lean();
+    const order = last.length ? ((last[0] as any).order || 0) + 1 : 1;
+
+    await CategoryTile.create({ name: cleanName, slug, imageUrl, order });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Category Tile Add Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * DELETE: Removes a preference category block.
+ */
+export async function deleteCategoryTile(tileId: string) {
+  try {
+    await connectDB();
+    await CategoryTile.findByIdAndDelete(tileId);
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Category Tile Delete Error:", error);
+    return { success: false };
+  }
+}
+
 // ==========================================
 // ANNOUNCEMENT BAR ACTIONS
 // ==========================================

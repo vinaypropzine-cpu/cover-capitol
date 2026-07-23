@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import {
   ShoppingBag, Search, Menu, ChevronRight, ChevronLeft, ShieldCheck, Zap,
   Smartphone, Sparkles, X, Trash2, User, ChevronDown, Package, Truck, CreditCard,
@@ -14,6 +14,8 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay'
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
+import ProductCard from '@/app/components/ProductCard';
+import { buildSearchIndex, searchDocs } from './lib/search';
 
 // --- Brand Theme ---
 const BRAND_YELLOW = '#fbea27';
@@ -126,11 +128,11 @@ export default function EcommerceSite() {
   // Brands whose /brands/<slug>.svg logo failed to load fall back to a monogram
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
-  const searchResults = liveProducts.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Build the search index once per product set (cheap re-search on every keystroke).
+  const searchIndex = useMemo(() => buildSearchIndex(liveProducts), [liveProducts]);
+  // useDeferredValue keeps typing snappy while results recompute without blocking input.
+  const deferredQuery = useDeferredValue(searchQuery);
+  const searchResults = useMemo(() => searchDocs(searchIndex, deferredQuery), [searchIndex, deferredQuery]);
 
   const handlePayment = async () => {
     try {
@@ -220,41 +222,27 @@ export default function EcommerceSite() {
       <main className="pt-[150px] sm:pt-[104px]">
         {searchQuery.length > 0 ? (
           /* --- SEARCH RESULTS VIEW: FIXED DUPLICATE KEY ERRORS --- */
-          <section className="py-20 max-w-7xl mx-auto px-6 min-h-screen">
-            <h2 className="text-3xl font-black uppercase mb-8 text-black">
-              Results for: <span style={{ color: BRAND_YELLOW }}>{searchQuery}</span>
-            </h2>
+          <section className="py-16 max-w-7xl mx-auto px-6 min-h-screen">
+            <div className="mb-8 border-b-4 border-black pb-4">
+              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">
+                Results for “<span style={{ color: '#000' }}>{searchQuery}</span>”
+              </h2>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
+                {searchResults.length} {searchResults.length === 1 ? 'match' : 'matches'} found
+              </p>
+            </div>
 
             {searchResults.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                 {searchResults.map((prod, idx) => (
-                  <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl shadow-sm text-black flex flex-col group transition-all hover:shadow-xl">
-                    <Link href={`/product/${prod.id}`} className="cursor-pointer">
-                      <div className="aspect-4/5 overflow-hidden rounded-xl mb-4 bg-gray-50">
-                        <img
-                          src={prod.images?.[0]}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          alt={prod.name}
-                        />
-                      </div>
-                      <h5 className="font-bold text-sm truncate group-hover:text-blue-600 transition-colors">
-                        {prod.name}
-                      </h5>
-                      <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                    </Link>
-                    <button
-                      onClick={() => { addToCart(prod); toggleCart(); }}
-                      style={{ backgroundColor: BRAND_YELLOW }}
-                      className="mt-auto py-2 rounded-md text-[10px] font-bold text-black border border-black/10 active:scale-95 transition-all uppercase"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
+                  <ProductCard key={`${prod.id}-${idx}`} product={prod} />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20">
-                <p className="text-gray-500 font-bold uppercase italic">No products found for "{searchQuery}"</p>
+              <div className="text-center py-24 bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-2xl">
+                <Search size={40} className="mx-auto text-zinc-300 mb-4" />
+                <p className="text-black font-black uppercase">No products found for “{searchQuery}”</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">Try a device name, brand, or protection type</p>
               </div>
             )}
           </section>
@@ -340,6 +328,28 @@ export default function EcommerceSite() {
               </div>
             </section>
 
+            {/* --- BEST SELLERS (moved directly below the hero) --- */}
+            <section className="py-16 bg-white">
+              <div className="max-w-7xl mx-auto px-4">
+                <div className="flex items-end justify-between gap-4 mb-8">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">Most Loved</p>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">Best Sellers</h2>
+                  </div>
+                  <Link href="/best-sellers" className="shrink-0 text-[11px] font-black uppercase tracking-widest text-black border-b-2 border-[#fbea27] pb-1 hover:border-black transition-all flex items-center gap-1">
+                    View All <ChevronRight size={14} />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                  {liveProducts.filter(p => p.tag === 'best seller')
+                    .slice(0, 5)
+                    .map((prod, idx) => (
+                      <ProductCard key={`${prod.id}-${idx}`} product={prod} />
+                    ))}
+                </div>
+              </div>
+            </section>
+
             <section className="py-20 max-w-7xl mx-auto px-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <h3 className="text-2xl font-bold text-black">Shop Your Preference</h3>
@@ -349,50 +359,45 @@ export default function EcommerceSite() {
                 </div>
               </div>
               {activeTab === 'categories' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                /* Compact circular category icons (admin-managed) */
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-8 sm:gap-x-8">
                   {(dbCategoryTiles.length > 0 ? dbCategoryTiles : TABS_DATA.categories).map((item: any) => (
                     <Link
                       key={item._id || item.id}
-                      href={`/category/${item.slug || item.name.toLowerCase().replace(/ /g, '-')}`}
-                      className="bg-white p-6 rounded-lg border shadow-sm group cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
+                      href={`/shop?category=${encodeURIComponent(item.name)}`}
+                      className="group flex flex-col items-center gap-3 w-24 sm:w-32"
                     >
-                      <h4 className="font-bold text-lg mb-4 text-black">{item.name}</h4>
-                      <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-5">
-                        <img src={item.imageUrl || item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-zinc-100 border-2 border-transparent shadow-sm group-hover:border-black group-hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all duration-300">
+                        <img src={item.imageUrl || item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
-                      <span style={{ backgroundColor: BRAND_YELLOW }} className="mt-auto w-full py-3 rounded-md text-[11px] font-black uppercase tracking-widest text-black flex items-center justify-center gap-2 border border-black/10 group-hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-0.5 transition-all">
-                        Shop Now <ChevronRight size={14} />
-                      </span>
+                      <span className="text-[11px] sm:text-xs font-black uppercase tracking-wide text-center text-zinc-700 group-hover:text-black transition-colors leading-tight">{item.name}</span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                /* Brand logos derived from admin-uploaded products */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                /* Compact circular brand logos derived from admin-uploaded products */
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-8 sm:gap-x-8">
                   {liveBrands.map((brand) => {
                     const slug = brand.toLowerCase().replace(/ /g, '-');
                     return (
                       <Link
                         key={brand}
                         href={`/brand/${slug}`}
-                        className="relative bg-white rounded-xl border border-black/10 shadow-sm group cursor-pointer overflow-hidden hover:border-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-4 p-8"
+                        className="group flex flex-col items-center gap-3 w-24 sm:w-32"
                       >
-                        <div className="h-12 w-full flex items-center justify-center">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-white border-2 border-black/10 shadow-sm group-hover:border-black group-hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 flex items-center justify-center p-6">
                           {failedLogos[slug] ? (
-                            <span style={{ backgroundColor: BRAND_YELLOW }} className="w-12 h-12 rounded-full border-2 border-black flex items-center justify-center text-lg font-black text-black">
-                              {brand.charAt(0).toUpperCase()}
-                            </span>
+                            <span className="text-2xl font-black text-black">{brand.charAt(0).toUpperCase()}</span>
                           ) : (
                             <img
                               src={`/brands/${slug}.svg`}
                               alt={`${brand} logo`}
-                              className="max-h-10 max-w-[65%] object-contain group-hover:scale-110 transition-transform duration-300"
+                              className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300"
                               onError={() => setFailedLogos((prev) => ({ ...prev, [slug]: true }))}
                             />
                           )}
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-black text-center transition-colors">{brand}</span>
-                        <span style={{ backgroundColor: BRAND_YELLOW }} className="absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-300" />
+                        <span className="text-[11px] sm:text-xs font-black uppercase tracking-wide text-center text-zinc-700 group-hover:text-black transition-colors leading-tight">{brand}</span>
                       </Link>
                     );
                   })}
@@ -439,33 +444,11 @@ export default function EcommerceSite() {
               </section>
             )}
 
-            {/* --- BEST SELLERS: UNIQUE KEY IMPLEMENTED --- */}
-            <section className="py-20 bg-white">
-              <div className="max-w-7xl mx-auto px-4">
-                <h3 className="text-2xl font-bold mb-8 text-black">Best Sellers in Screen Protection</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {liveProducts.filter(p => p.tag === 'best seller')
-                    .slice(0, 5)
-                    .map((prod, idx) => (
-                      <div key={`${prod.id}-${idx}`} className="border p-4 rounded hover:shadow-lg transition-all flex flex-col group text-black">
-                        <Link href={`/product/${prod.id}`}>
-                          <div className="aspect-[5/5] bg-gray-100 rounded mb-4 overflow-hidden">
-                            <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          </div>
-                          <h5 className="font-medium text-xs line-clamp-2 h-8 mb-2 group-hover:text-blue-600 text-black">{prod.name}</h5>
-                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                        </Link>
-                        <button onClick={() => addToCart(prod)} style={{ backgroundColor: BRAND_YELLOW }} className="mt-auto py-2 rounded-md text-[10px] font-bold text-black border border-black/10 active:scale-95 transition-all uppercase">Add to Cart</button>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </section>
-
-            {/* --- ALL PRODUCTS: UNIQUE KEY IMPLEMENTED --- */}
-            <section className="py-20 max-w-7xl mx-auto px-6">
-              <div className="mb-12">
-                <h2 className="text-3xl font-black uppercase italic mb-8 text-black">All Products</h2>
+            {/* --- ALL PRODUCTS --- */}
+            <section className="py-16 max-w-7xl mx-auto px-6">
+              <div className="mb-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">Browse The Full Range</p>
+                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-8 text-black">All Products</h2>
                 <div className="flex gap-8 border-b border-gray-200 overflow-x-auto pb-4 no-scrollbar">
                   {[{ id: 'screen', label: 'Screen Protection' }, { id: 'camera', label: 'Camera Protection' }, { id: 'back', label: 'Back Protection' }, { id: 'combo', label: 'Combo' }].map((tab) => (
                     <button key={tab.id} onClick={() => setActiveSubCategory(tab.id as any)} className={`text-sm font-bold uppercase tracking-widest whitespace-nowrap transition-all relative pb-4 ${activeSubCategory === tab.id ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -482,142 +465,90 @@ export default function EcommerceSite() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6"
+                  className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6"
                 >
                   {liveProducts
                     .filter(p => p.category === categoryMap[activeSubCategory])
                     .slice(0, 4)
                     .map((prod, idx) => (
-                      <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl hover:shadow-lg transition-all flex flex-col group text-black">
-                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
-                          <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
-                            <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-                              {prod.tag}
-                            </span>
-                            <img
-                              src={prod.images?.[0]}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                              alt={prod.name}
-                            />
-                          </div>
-                          <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
-                            {prod.name}
-                          </h5>
-                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                        </Link>
-                        <div className="relative">
-                          <button
-                            onClick={() => { addToCart(prod); toggleCart(); }}
-                            style={{ backgroundColor: BRAND_YELLOW }}
-                            className="w-full py-3 rounded-xl text-[11px] font-black uppercase text-black shadow-xl active:scale-95 transition-all"
-                          >
-                            Add to Bag
-                          </button>
-                        </div>
-                      </div>
+                      <ProductCard key={`${prod.id}-${idx}`} product={prod} />
                     ))}
                 </motion.div>
               </AnimatePresence>
               <div className="mt-12 flex justify-center">
-                <button className="px-10 py-3 border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+                <Link href={`/shop?category=${encodeURIComponent(categoryMap[activeSubCategory])}`} className="px-10 py-3 border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all">
                   View All {categoryMap[activeSubCategory]}
-                </button>
+                </Link>
               </div>
             </section>
 
-            {/* --- TOP RATED SECTION: UNIQUE KEY IMPLEMENTED --- */}
-            <section className="py-20 bg-gray-50">
+            {/* --- TOP RATED SECTION --- */}
+            <section className="py-16 bg-gray-50">
               <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center justify-between mb-12">
+                <div className="flex items-end justify-between gap-4 mb-8">
                   <div>
-                    <h2 className="text-3xl font-black uppercase italic text-black">Top Rated Protection</h2>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-2">Community Favorites • 4.9/5 Avg. Rating</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">Community Favorites</p>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">Top Rated Protection</h2>
                   </div>
-                  <button className="hidden md:block text-xs font-black uppercase border-b-2 border-black pb-1 hover:text-orange-600 hover:border-orange-600 transition-all">
-                    Explore All
-                  </button>
+                  <Link href="/shop?tag=top%20rated" className="shrink-0 text-[11px] font-black uppercase tracking-widest text-black border-b-2 border-[#fbea27] pb-1 hover:border-black transition-all flex items-center gap-1">
+                    Explore All <ChevronRight size={14} />
+                  </Link>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6">
                   {liveProducts
                     .filter(p => p.tag === 'top rated')
                     .slice(0, 4)
                     .map((prod, idx) => (
-                      <div key={`${prod.id}-${idx}`} className="bg-white border p-4 rounded-2xl hover:shadow-xl transition-all flex flex-col group text-black shadow-sm">
-                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
-                          <div className="relative aspect-[4/5] bg-gray-100 rounded-xl mb-4 overflow-hidden">
-                            <div className="absolute top-2 left-2 z-10 flex gap-2">
-                              <span className="bg-[#fbea27] text-black px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-black/10">
-                                ⭐ {prod.tag}
-                              </span>
-                            </div>
-                            <img
-                              src={prod.images?.[0]}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                              alt={prod.name}
-                            />
-                          </div>
-                          <h5 className="font-bold text-sm mb-1 truncate text-black group-hover:text-blue-600 transition-colors">
-                            {prod.name}
-                          </h5>
-                          <p className="text-lg font-black text-[#B12704] mb-4">₹{prod.price}</p>
-                        </Link>
-                        <button
-                          onClick={() => { addToCart(prod); toggleCart(); }}
-                          style={{ backgroundColor: BRAND_YELLOW }}
-                          className="w-full py-3 rounded-xl text-[11px] font-black uppercase text-black shadow-lg active:scale-95 transition-all border border-black/5"
-                        >
-                          Add to Bag
-                        </button>
-                      </div>
+                      <ProductCard key={`${prod.id}-${idx}`} product={prod} />
                     ))}
                 </div>
               </div>
             </section>
 
-            {/* --- TOP DEALS SECTION: UNIQUE KEY IMPLEMENTED --- */}
-            <section className="py-20 bg-white">
+            {/* --- BIGGEST DEALS (sorted by real MRP savings) --- */}
+            <section className="py-16 bg-white">
               <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center gap-4 mb-12">
-                  <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-black uppercase text-sm italic animate-pulse">
-                    Flash Sale
+                <div className="flex items-end justify-between gap-4 mb-8">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-red-600 text-white px-3 py-1.5 rounded-md font-black uppercase text-[11px] tracking-widest">Deals</span>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">Biggest Savings</h2>
                   </div>
-                  <h2 className="text-3xl font-black uppercase italic text-black">Top Deals</h2>
+                  <Link href="/best-sellers" className="shrink-0 text-[11px] font-black uppercase tracking-widest text-black border-b-2 border-red-600 pb-1 hover:border-black transition-all flex items-center gap-1">
+                    View All <ChevronRight size={14} />
+                  </Link>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6">
                   {liveProducts
-                    .filter(p => p.tag?.toLowerCase() === 'top deal')
+                    .filter(p => Number(p.compareAtPrice) > Number(p.price) && p.tag !== 'test product')
+                    .sort((a, b) => (Number(b.compareAtPrice) - Number(b.price)) - (Number(a.compareAtPrice) - Number(a.price)))
                     .slice(0, 4)
                     .map((prod, idx) => (
-                      <div key={`${prod.id}-${idx}`} className="bg-white border-2 border-black p-4 rounded-2xl hover:translate-y-[-4px] transition-all flex flex-col group text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <Link href={`/product/${prod.id}`} className="cursor-pointer">
-                          <div className="relative aspect-[4/5] bg-gray-50 rounded-xl mb-4 overflow-hidden">
-                            <div className="absolute top-2 right-2 z-10">
-                              <span className="bg-black text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">
-                                🔥 Limited
-                              </span>
-                            </div>
-                            <img
-                              src={prod.images?.[0]}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                              alt={prod.name}
-                            />
-                          </div>
-                          <h5 className="font-bold text-sm mb-1 truncate text-black">{prod.name}</h5>
-                          <div className="flex items-center gap-2 mb-4">
-                            <p className="text-xl font-black text-red-600">₹{prod.price}</p>
-                            <p className="text-xs text-gray-400 line-through italic">₹{prod.price + 400}</p>
-                          </div>
-                        </Link>
-                        <button
-                          onClick={() => { addToCart(prod); toggleCart(); }}
-                          className="w-full py-3 bg-black text-white rounded-xl text-[11px] font-black uppercase hover:bg-zinc-800 transition-all"
-                        >
-                          Grab Now
-                        </button>
-                      </div>
+                      <ProductCard key={`${prod.id}-${idx}`} product={prod} />
                     ))}
+                </div>
+              </div>
+            </section>
+
+            {/* --- TRUST / GUARANTEE BAND --- */}
+            <section className="py-16 bg-[#131921] text-white">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                  {[
+                    { icon: <ShieldCheck size={28} />, title: '9H Hardness', desc: 'Military-grade tempered glass built to survive drops.' },
+                    { icon: <Zap size={28} />, title: 'Bubble-Free Fit', desc: 'Precision-cut for a flawless, bubble-free install.' },
+                    { icon: <Package size={28} />, title: '7-Day Replacement', desc: 'Not happy? Hassle-free replacement, no questions.' },
+                    { icon: <Truck size={28} />, title: 'Free Delivery ₹499+', desc: 'Fast express shipping with Cash on Delivery.' },
+                  ].map((item) => (
+                    <div key={item.title} className="flex flex-col items-center text-center gap-3">
+                      <div style={{ color: BRAND_YELLOW }} className="w-14 h-14 rounded-full border-2 border-white/15 flex items-center justify-center">
+                        {item.icon}
+                      </div>
+                      <h4 className="font-black uppercase text-sm tracking-wide">{item.title}</h4>
+                      <p className="text-[11px] font-medium text-zinc-400 leading-relaxed max-w-[180px]">{item.desc}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

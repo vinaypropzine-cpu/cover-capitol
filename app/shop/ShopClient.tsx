@@ -8,6 +8,8 @@ import { useCartStore } from '@/app/useCartStore';
 import { getProducts } from '@/app/lib/actions';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
+import ProductCard from '@/app/components/ProductCard';
+import { matchesQuery } from '@/app/lib/search';
 
 const BRAND_YELLOW = '#fbea27';
 
@@ -68,7 +70,7 @@ export default function ShopClient({ filters }: { filters: ShopFilters }) {
     if (filters.finish && !(p.types || []).some((t: any) => fuzzyMatch(t?.name, filters.finish))) return false;
     if (filters.model && !fuzzyMatch(p.model, filters.model)) return false;
     if (filters.tag && !fuzzyMatch(p.tag, filters.tag)) return false;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || searchQuery === "";
+    const matchesSearch = matchesQuery(p, searchQuery);
     const matchesPrice = selectedPrices.length === 0 ||
       selectedPrices.some(maxPrice => Number(p.price) <= maxPrice);
     return matchesSearch && matchesPrice;
@@ -239,15 +241,7 @@ export default function ShopClient({ filters }: { filters: ShopFilters }) {
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((prod, idx) => (
-                <div key={`${prod.id}-${idx}`} className="group border-2 border-black/5 p-4 hover:border-black transition-all bg-white relative shadow-sm">
-                  <Link href={`/product/${prod.id}`} className="block aspect-[4/5] bg-zinc-50 mb-4 overflow-hidden relative border border-black/5">
-                    <span className="absolute top-2 left-2 z-10 bg-black text-white px-3 py-1 text-[8px] font-black uppercase tracking-widest">{prod.tag || 'In Stock'}</span>
-                    <img src={prod.images?.[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={prod.name} />
-                  </Link>
-                  <h4 className="font-black uppercase text-[11px] mb-1 truncate tracking-tight text-black">{prod.name}</h4>
-                  <p className="text-lg font-black text-red-600 mb-4">₹{prod.price}</p>
-                  <button onClick={() => { addToCart(prod); toggleCart(); }} style={{ backgroundColor: BRAND_YELLOW }} className="w-full py-3 font-black uppercase text-[10px] border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-black">Add To Cart</button>
-                </div>
+                <ProductCard key={`${prod.id}-${idx}`} product={prod} />
               ))}
             </div>
           ) : (
